@@ -1,0 +1,25 @@
+# Compilacion (se regenera al compilar)
+/build/
+# Salidas viejas de Visual Studio, por si vuelven a aparecer
+/x64/
+/juego_pr2/
+
+# Partes de SFML que el proyecto no usa (estaticas -s, simbolos .pdb, cmake).
+# Solo se suben los headers, las DLL y las .lib dinamicas de SFML
+/libs/SFML-2.6.2/lib/*.lib
+!/libs/SFML-2.6.2/lib/sfml-*.lib
+/libs/SFML-2.6.2/lib/sfml-*-s.lib
+/libs/SFML-2.6.2/lib/sfml-*-s-d.lib
+/libs/SFML-2.6.2/lib/Debug/
+/libs/SFML-2.6.2/lib/cmake/
+
+# Se quedan solo en esta PC
+/docs/
+/_plantilla_cmake/
+/.vscode
+
+# Configuracion personal de cada PC
+CMakeUserPresets.json
+.vs/
+*.user
+*.aps

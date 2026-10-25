@@ -1,0 +1,11 @@
+# Texto: en el repo se guarda con LF y en Windows se baja con CRLF (lo que usa Visual Studio)
+* text=auto
+# Binarios: git no los modifica nunca
+*.png binary
+*.jpg binary
+*.ico binary
+*.wav binary
+*.ogg binary
+*.ttf binary
+*.dll binary
+*.lib binary

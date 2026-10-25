@@ -1,0 +1,20 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Elementos de la solución/">
+    <File Path="Imagenes/abismo.png" />
+    <File Path="Imagenes/abismo_borde_ambos.png" />
+    <File Path="Imagenes/abismo_borde_arriba.png" />
+    <File Path="Imagenes/abismo_borde_izquierda.png" />
+    <File Path="Imagenes/icono.ico" />
+    <File Path="Imagenes/icono_32.png" />
+    <File Path="Imagenes/icono_ventana.png" />
+    <File Path="Imagenes/mago_v1_64.png" />
+    <File Path="Imagenes/mapa_nivel1.png" />
+    <File Path="Imagenes/roca.png" />
+    <File Path="Imagenes/suelo.png" />
+  </Folder>
+  <Project Path="juego_pr2.vcxproj" Id="6af56d17-e23c-4a98-90f3-1a67dbd52a1d" />
+</Solution>
