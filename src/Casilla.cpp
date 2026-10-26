@@ -13,5 +13,5 @@ void Casilla::setTipoTerreno(TipoTerreno _tipoTerreno) {
 }
 
 bool Casilla::esTransitable() {
-	return false;
+	return tipo == TipoTerreno::SUELO;
 };

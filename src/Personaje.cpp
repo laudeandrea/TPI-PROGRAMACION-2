@@ -24,7 +24,8 @@ void Personaje::mostrar(sf::RenderWindow& ventana, const Mapa& mapa) const{
 };
 
 void Personaje::mover (int _fila, int _columna){
-
+	fila = _fila;
+	columna = _columna;
 };
 
 void Personaje::recibirDanio(){

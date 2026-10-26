@@ -29,26 +29,6 @@ void Juego::ejecutar() {
 
 		// CMD - Joystick
 
-		/*
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-			personaje.move(0, -velocity);
-		};
-
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-			personaje.move(0, +velocity);
-		};
-
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-			personaje.move(-velocity, 0);
-		};
-
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-			personaje.move(+velocity, 0);
-		};
-		*/
-
-		// Update - Actualiza los estados del juego
-
 		dibujar();
 	}
 };
@@ -63,6 +43,17 @@ void Juego::procesarEventos() {
 
 		if (event.type == sf::Event::Resized) {
 			camara.ajustarAVentana(window.getSize());
+		}
+
+		// Click izquierdo mueve al mago a la casilla clickeada si es terreno tipo suelo
+		if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left){
+			sf::Vector2i pixel(event.mouseButton.x, event.mouseButton.y);
+			sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel);
+			sf::Vector2i casilla = mapa.mundoAcasilla(posicionMundo);
+
+			if (mapa.esValida(casilla.y, casilla.x)){
+				mago.mover(casilla.y, casilla.x);
+			}
 		}
 	}
 };

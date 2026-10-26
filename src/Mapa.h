@@ -16,7 +16,8 @@ class Mapa {
 		Mapa();
 		void mostrar(sf::RenderWindow& ventana);
 		sf::Vector2f casillaAmundo(int fila, int columna) const;
+		sf::Vector2i mundoAcasilla(sf::Vector2f posicion) const;
 		sf::Vector2f getTamanioMundo() const;
 		void mover();
-		bool esValida();
+		bool esValida(int _fila, int _columna);
 };

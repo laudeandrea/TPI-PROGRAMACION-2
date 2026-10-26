@@ -1,4 +1,5 @@
 #include "Mapa.h"
+#include <cmath>
 
 Mapa::Mapa() {
 	// Dibujo de la matriz del mapa con cada tipo de suelo
@@ -77,8 +78,19 @@ void Mapa::mostrar(sf::RenderWindow& ventana) {
 sf::Vector2f Mapa::casillaAmundo(int fila, int columna) const{
 	float x = (columna - fila) * ANCHO_CASILLAS / 2 + CANT_CASILLAS * ANCHO_CASILLAS / 2;
 	float y = (columna + fila) * ALTO_CASILLAS / 2 + ALTO_CASILLAS / 2;
-
+	
 	return sf::Vector2f(x, y);
+};
+
+sf::Vector2i Mapa::mundoAcasilla(sf::Vector2f posicion) const{
+	float a = (posicion.x - CANT_CASILLAS * ANCHO_CASILLAS / 2) / (ANCHO_CASILLAS / 2); // columna - fila
+	float b = (posicion.y - ALTO_CASILLAS / 2) / (ALTO_CASILLAS / 2); // columna + fila
+
+	// Como el click no suele caer en el centro, se redondea al int más cercano y esa es la casilla a usar
+	int columna = (int)std::round((a + b) / 2);
+	int fila = (int)std::round((b - a) / 2);
+
+	return sf::Vector2i(columna,fila);
 };
 
 // Tamaño total del tablero en el mundo (vista isométrica). 
@@ -90,6 +102,10 @@ void Mapa::mover() {
 
 };
 
-bool Mapa::esValida() {
-	return false;
+// Una casilla es valida si esta dentro del tablero y se puede pisar
+bool Mapa::esValida(int _fila, int _columna) {
+	if (_fila < 0 || _fila >= CANT_CASILLAS || _columna < 0 || _columna >= CANT_CASILLAS){
+		return false;
+	}
+	return casillas[_fila][_columna].esTransitable();
 };
