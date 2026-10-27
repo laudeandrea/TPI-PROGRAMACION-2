@@ -26,7 +26,7 @@ build\bin\x64\Debug\juego_pr2.exe     <- para programar y depurar
 build\bin\x64\Release\juego_pr2.exe   <- versión para entregar
 ```
 
-Al compilar se copian solas al lado del `.exe` las DLL de SFML y la carpeta `Imagenes`, así que el juego
+Al compilar se copian solas al lado del `.exe` las DLL de SFML y las carpetas `Imagenes` y `Fuentes`, así que el juego
 también se abre con doble clic. La versión **Debug** solo funciona en PCs que tengan Visual Studio instalado;
 para pasarle el juego a alguien, usá la carpeta de **Release** completa.
 
@@ -37,11 +37,13 @@ La carpeta `build\` se puede borrar cuando quieras: se vuelve a generar al compi
 ```
 README.md              Este archivo: cómo compilar y cómo funciona el código
 CONTRIBUTING.md        Pautas de código y de arte
+SFML_usado.txt         Qué hace cada función de SFML que usa el juego, y dónde se usa
 juego_pr2.slnx         Solución (abrir esta)
 juego_pr2.vcxproj      Proyecto: rutas, SFML y copia automática de DLL/imágenes
 juego_pr2.rc           Ícono del .exe (usa Imagenes/icono.ico)
 src/                   Código del juego (.cpp y .h)
 Imagenes/              Texturas e íconos
+Fuentes/               Fuente del juego (Pixelify Sans) y su licencia (OFL.txt)
 libs/SFML-2.6.2/       SFML: headers, .lib y DLL (Debug con -d, Release sin -d)
 build/                 Generado al compilar (ignorado por git)
 ```
@@ -52,25 +54,31 @@ build/                 Generado al compilar (ignorado por git)
 
 | Clase | Archivos | Qué hace |
 |---|---|---|
-| `Juego` | `Juego.h` / `Juego.cpp` | Tiene la ventana, el mapa y la cámara. Corre el game loop. |
+| `Juego` | `Juego.h` / `Juego.cpp` | Tiene la ventana, el menú, el mapa y la cámara. Sabe en qué pantalla está (`estado`) y corre el game loop. |
 | `Mapa` | `Mapa.h` / `Mapa.cpp` | El tablero de 8×8: qué hay en cada casilla, dónde se dibuja cada una y cómo. |
 | `Casilla` | `Casilla.h` / `Casilla.cpp` | Una casilla del tablero. Por ahora solo guarda su tipo de terreno. |
+| `Menu` | `Menu.h` / `Menu.cpp` | Pantalla de inicio: dibuja fondo, título y opciones, y se elige con flechas + Enter o con el mouse. El arte y las medidas están en [CONTRIBUTING.md](CONTRIBUTING.md#menú-principal). |
 | `Camara` | `Camara.h` / `Camara.cpp` | Encuadra el tablero y lo adapta al tamaño de la ventana sin deformarlo. |
 | `Personaje` | `Personaje.h` / `Personaje.cpp` | Clase base de todo lo que se para en el tablero: en qué casilla está, su vida, su imagen y cómo dibujarse. |
 | `Mago` | `Mago.h` / `Mago.cpp` | Hereda de `Personaje`. Agrega el maná y carga su propia imagen. |
 | `TipoTerreno` | `TipoTerreno.h` | `enum` con los terrenos posibles: `SUELO`, `COLUMNAROTA`, `ABISMO`. |
+| `EstadoJuego` | `EstadoJuego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `JUGANDO`. |
 
 `main.cpp` solo crea un `Juego` y llama a `ejecutar()`.
 
 ### Qué pasa al ejecutar
 
 1. **`Juego()`** (constructor): crea la ventana de 800×600, le pone el ícono, crea el `Mapa`
-   (que arma el tablero y carga las texturas), el `Mago` en su casilla inicial y la `Camara` encuadrando
-   el tablero.
+   (que arma el tablero y carga las texturas), el `Mago` en su casilla inicial, la `Camara` encuadrando
+   el tablero y el `Menu`. Arranca con `estado = EstadoJuego::MENU`.
 2. **`ejecutar()`**: repite en cada frame (60 por segundo):
-   - **`procesarEventos()`**: cierra la ventana si la cierran, y reajusta la cámara si le cambian el tamaño.
-   - **`dibujar()`**: limpia la pantalla, aplica la cámara, dibuja el mapa y después el mago (lo último
-     que se dibuja queda arriba).
+   - **`procesarEventos()`**: cierra la ventana si la cierran y reajusta la cámara si le cambian el tamaño.
+     El resto depende del estado:
+     - **En el menú**: le pasa cada evento a `menu.procesarEvento()`, que devuelve la opción elegida
+       (o `-1`). "Nueva partida" cambia el estado a `JUGANDO` y "Salir" cierra la ventana.
+     - **Jugando**: el click izquierdo mueve al mago a la casilla clickeada, y Escape vuelve al menú.
+   - **`dibujar()`**: limpia la pantalla y, según el estado, dibuja el menú o el tablero (cámara, mapa
+     y después el mago: lo último que se dibuja queda arriba).
 
 ### Las tres capas: grilla, mundo y pantalla
 
@@ -123,5 +131,6 @@ Las reglas de código y de arte están en [CONTRIBUTING.md](CONTRIBUTING.md). Le
   Visual Studio por defecto los crea en la raíz del proyecto.
 - **Imágenes nuevas:** van en `Imagenes/` y se cargan con ruta relativa, por ejemplo
   `textura.loadFromFile("Imagenes/suelo.png");`.
+- **Fuentes:** van en `Fuentes/` y se cargan igual: `fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf");`.
 - Si agregás sonido (`sf::Sound`, `sf::Music`), no hay que configurar nada: `sfml-audio` y `openal32.dll`
   ya se enlazan y se copian.

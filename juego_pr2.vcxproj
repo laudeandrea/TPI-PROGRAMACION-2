@@ -156,13 +156,14 @@
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <!-- Despues de compilar, deja al lado del .exe todo lo que necesita para abrirse con doble clic -->
     <PostBuildEvent>
-      <Message>Copiando DLL de SFML e Imagenes al lado del .exe</Message>
+      <Message>Copiando DLL de SFML, Imagenes y Fuentes al lado del .exe</Message>
       <Command>xcopy /Y /D "$(SfmlDir)bin\sfml-system$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\sfml-window$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\sfml-graphics$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\sfml-audio$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\openal32.dll" "$(OutDir)"
-xcopy /Y /D /I /E "$(ProjectDir)Imagenes" "$(OutDir)Imagenes"</Command>
+xcopy /Y /D /I /E "$(ProjectDir)Imagenes" "$(OutDir)Imagenes"
+xcopy /Y /D /I /E "$(ProjectDir)Fuentes" "$(OutDir)Fuentes"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -172,14 +173,17 @@ xcopy /Y /D /I /E "$(ProjectDir)Imagenes" "$(OutDir)Imagenes"</Command>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mago.cpp" />
     <ClCompile Include="src\Mapa.cpp" />
+    <ClCompile Include="src\Menu.cpp" />
     <ClCompile Include="src\Personaje.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camara.h" />
     <ClInclude Include="src\Casilla.h" />
+    <ClInclude Include="src\EstadoJuego.h" />
     <ClInclude Include="src\Juego.h" />
     <ClInclude Include="src\Mago.h" />
     <ClInclude Include="src\Mapa.h" />
+    <ClInclude Include="src\Menu.h" />
     <ClInclude Include="src\Personaje.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\TipoTerreno.h" />

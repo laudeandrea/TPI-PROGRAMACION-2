@@ -1,0 +1,264 @@
+FUNCIONES DE SFML QUE USA EL JUEGO
+==================================
+
+Qué hace cada clase y función de SFML que aparece hoy en el código, y en qué archivo se usa.
+Todo lo de SFML empieza con "sf::". Versión: SFML 2.6.2.
+
+Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no está acá, falta agregarlo.
+
+Última actualización: 26/10/2026
+
+
+----------------------------------------------------------------------------------------------------
+1. LA VENTANA: sf::RenderWindow
+----------------------------------------------------------------------------------------------------
+La ventana del juego. Además de mostrarse en pantalla, se puede dibujar adentro.
+Se crea una sola vez, en Juego.
+
+  sf::RenderWindow window(sf::VideoMode(800, 600), "El codice del Mago");
+      Crea la ventana. sf::VideoMode es el tamaño en píxeles (ancho, alto); el texto es el título
+      de la barra de arriba.
+      -> Juego.cpp (constructor)
+
+  window.setFramerateLimit(60)
+      Limita el juego a 60 cuadros por segundo. Sin esto el loop corre lo más rápido que puede y
+      usa el 100% del procesador.
+      -> Juego.cpp (constructor)
+
+  window.setIcon(ancho, alto, pixeles)
+      Pone el ícono de la ventana (el de la barra de título y el de la barra de tareas).
+      Los píxeles salen de un sf::Image.
+      -> Juego.cpp (constructor)
+
+  window.isOpen()
+      Devuelve true mientras la ventana esté abierta. Es la condición del game loop.
+      -> Juego.cpp (ejecutar)
+
+  window.pollEvent(event)
+      Saca el próximo evento de la cola (un click, una tecla, cerrar la ventana...) y lo guarda en
+      "event". Devuelve false cuando ya no quedan, por eso se usa en un while.
+      -> Juego.cpp (procesarEventos)
+
+  window.close()
+      Cierra la ventana. Después de esto isOpen() da false y el game loop termina.
+      -> Juego.cpp (procesarEventos)
+
+  window.getSize()
+      Devuelve el tamaño actual de la ventana en píxeles, como sf::Vector2u.
+      Cambia si el usuario la agranda o la achica.
+      -> Juego.cpp (constructor y procesarEventos)
+
+  window.clear()
+      Borra todo lo dibujado en el cuadro anterior. Se llama al principio de cada dibujado.
+      Sin color pinta de negro; también acepta un sf::Color.
+      -> Juego.cpp (dibujar)
+
+  window.draw(algo)
+      Dibuja un sprite, un texto o cualquier cosa dibujable. Lo que se dibuja después queda arriba
+      de lo anterior, así que el orden importa (fondo primero, personajes al final).
+      -> Mapa.cpp (mostrar), Personaje.cpp (mostrar), Menu.cpp (dibujar)
+
+  window.display()
+      Muestra en pantalla todo lo que se dibujó. Hasta que no se llama, no se ve nada.
+      Se llama al final de cada dibujado.
+      -> Juego.cpp (dibujar)
+
+  window.setView(vista)
+      Elige qué parte del mundo se ve en la ventana (ver sf::View más abajo).
+      Todo lo que se dibuja después usa esa vista.
+      -> Camara.cpp (aplicar), Menu.cpp (dibujar)
+
+  window.mapPixelToCoords(pixel)
+  window.mapPixelToCoords(pixel, vista)
+      Convierte un punto de la pantalla (por ejemplo, donde se hizo click) a coordenadas del mundo,
+      teniendo en cuenta la vista. Sin esto, si la cámara está movida o agrandada, el click cae en
+      otro lugar.
+      Sin el segundo parámetro usa la vista que esté puesta en la ventana. Con él, usa la vista
+      que le pases: el menú le pasa la suya, así funciona aunque la ventana cambie de tamaño.
+      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+
+
+----------------------------------------------------------------------------------------------------
+2. EVENTOS: sf::Event y sf::Mouse
+----------------------------------------------------------------------------------------------------
+Un sf::Event es algo que pasó: se apretó una tecla, se hizo click, se cerró la ventana.
+Se leen con window.pollEvent(event).
+
+  event.type
+      Qué tipo de evento es. Los que usamos:
+        sf::Event::Closed              -> tocaron la X de la ventana
+        sf::Event::Resized             -> cambiaron el tamaño de la ventana
+        sf::Event::MouseButtonPressed  -> apretaron un botón del mouse
+        sf::Event::MouseMoved          -> movieron el mouse
+        sf::Event::KeyPressed          -> apretaron una tecla
+      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+
+  ¡CUIDADO! Cada tipo de evento guarda sus datos en un campo distinto (mouseButton, mouseMove,
+  key). Leer el campo de otro tipo (por ejemplo event.key en un click) da basura.
+
+  event.mouseButton.button
+      Con qué botón del mouse se hizo click. sf::Mouse::Left es el izquierdo.
+      Solo vale la pena leerlo si event.type es MouseButtonPressed.
+      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+
+  event.mouseButton.x / event.mouseButton.y
+      En qué píxel de la ventana se hizo click.
+      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+
+  event.mouseMove.x / event.mouseMove.y
+      En qué píxel de la ventana está el mouse ahora. Solo si event.type es MouseMoved.
+      -> Menu.cpp (procesarEvento)
+
+  event.key.code
+      Qué tecla se apretó. Solo si event.type es KeyPressed. Las teclas están en sf::Keyboard:
+        sf::Keyboard::Up / Down   -> flechas arriba y abajo
+        sf::Keyboard::Enter       -> Enter
+        sf::Keyboard::Escape      -> Escape (en el tablero, vuelve al menú)
+      -> Menu.cpp (procesarEvento), Juego.cpp (procesarEventos)
+
+  const sf::Event& evento (como parámetro)
+      Menu::procesarEvento recibe el evento que leyó Juego, para que el menú decida qué hacer con él.
+      -> Menu.h / Menu.cpp
+
+
+----------------------------------------------------------------------------------------------------
+3. IMÁGENES: sf::Image, sf::Texture y sf::Sprite
+----------------------------------------------------------------------------------------------------
+Hay tres cosas distintas y es fácil confundirlas:
+
+  sf::Image    la imagen en la memoria común. Se pueden leer y cambiar sus píxeles.
+               No se puede dibujar directamente.
+  sf::Texture  la imagen cargada en la placa de video, lista para dibujarse rápido.
+  sf::Sprite   lo que se dibuja: "esta textura, en esta posición". No guarda la imagen,
+               solo apunta a una textura.
+
+  ¡CUIDADO! Como el sprite solo apunta a la textura, la textura tiene que seguir existiendo
+  mientras se use el sprite. Si la textura es una variable local que se borra, el sprite se
+  dibuja como un cuadrado blanco. Por eso las texturas son atributos de las clases.
+
+  imagen.loadFromFile("Imagenes/archivo.png")
+  textura.loadFromFile("Imagenes/archivo.png")
+      Carga la imagen desde el disco. Devuelve false si no la encuentra.
+      La ruta es relativa a la carpeta del .exe.
+      -> Juego.cpp (sf::Image del ícono), Mapa.cpp, Mago.cpp, Menu.cpp (sf::Texture)
+
+  imagen.getSize()
+      Ancho y alto de la imagen en píxeles.
+      -> Juego.cpp (ícono)
+
+  imagen.getPixelsPtr()
+      Puntero a los píxeles de la imagen. Lo pide window.setIcon.
+      -> Juego.cpp (ícono)
+
+  sprite.setTexture(textura)
+      Le dice al sprite qué textura mostrar.
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+
+
+----------------------------------------------------------------------------------------------------
+4. TEXTO: sf::Font y sf::Text
+----------------------------------------------------------------------------------------------------
+  sf::Font     la fuente (el archivo .ttf) cargada.
+  sf::Text     un texto para dibujar: qué dice, con qué fuente, tamaño, color y posición.
+
+  ¡CUIDADO! Igual que el sprite con la textura, el sf::Text solo apunta a la fuente.
+  La fuente tiene que ser un atributo, no una variable local.
+
+  fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf")
+      Carga la fuente desde el disco. Devuelve false si no la encuentra.
+      -> Menu.cpp (constructor)
+
+  texto.setFont(fuente)
+      Elige con qué fuente se escribe.
+      -> Menu.cpp (constructor)
+
+  texto.setString("...")
+      Qué dice el texto. A diferencia de la fuente, el texto SÍ se copia, así que el string original
+      se puede borrar.
+      Ojo con las tildes: pasado así, "ó" se ve mal. Para usarlas hay que convertirlo con
+      sf::String::fromUtf8(texto.begin(), texto.end()). Por ahora el menú no usa tildes.
+      -> Menu.cpp (constructor)
+
+  texto.setCharacterSize(22)
+      Tamaño de la letra en píxeles. Con Pixelify Sans usamos 22 u 11 (con otros se ve borrosa).
+      -> Menu.cpp (constructor)
+
+  texto.setFillColor(sf::Color(...))
+      Color de las letras.
+      -> Menu.cpp (constructor)
+
+
+----------------------------------------------------------------------------------------------------
+5. POSICIÓN Y ORIGEN (sirven igual para sf::Sprite y sf::Text)
+----------------------------------------------------------------------------------------------------
+  objeto.setPosition(x, y)   o   objeto.setPosition(vector)
+      Dónde se dibuja el objeto. Lo que queda en (x, y) es su ORIGEN.
+      Recibe float. Si le pasás una cuenta con int (como 400 + i * 40), Visual Studio avisa
+      "conversión de 'int' a 'float'". Se evita escribiendo los números con .f: 400.f + i * 40.f
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+
+  objeto.setOrigin(x, y)
+      Elige qué punto del objeto es el origen. Por defecto es la esquina de arriba a la izquierda.
+      Ejemplos del juego:
+        - Personaje: el origen va en los pies (abajo al centro), así queda parado en la casilla.
+        - Mapa: el origen va en el centro del rombo de la baldosa.
+        - Menu: el origen va en el centro del texto, así setPosition(400, ...) lo deja centrado.
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+
+  objeto.getLocalBounds()
+      Devuelve el rectángulo (sf::FloatRect) que ocupa el objeto, medido sobre el objeto mismo,
+      sin importar dónde esté ubicado. Sirve para saber su tamaño y calcular el origen.
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+
+  objeto.getGlobalBounds()
+      El mismo rectángulo, pero ya ubicado en el mundo (con setPosition y setOrigin aplicados).
+      Sirve para saber dónde quedó el objeto: el menú lo usa para ubicar el selector al lado del
+      texto y para saber si el mouse está encima de una opción.
+      -> Menu.cpp (procesarEvento y dibujar)
+
+
+----------------------------------------------------------------------------------------------------
+6. LA CÁMARA: sf::View
+----------------------------------------------------------------------------------------------------
+Una vista es qué rectángulo del mundo se muestra en la ventana. Si ese rectángulo es más chico que
+la ventana, todo se ve agrandado; si es más grande, se ve achicado.
+
+  sf::View(sf::FloatRect(0, 0, 800, 600))
+      Crea una vista que muestra el rectángulo que empieza en (0, 0) y mide 800x600.
+      El menú usa esta vista fija, así sus medidas no cambian aunque cambie la ventana.
+      -> Menu.cpp (constructor)
+
+  vista.setCenter(x, y)
+      A qué punto del mundo mira el centro de la vista.
+      -> Camara.cpp (constructor)
+
+  vista.setSize(ancho, alto)   o   vista.setSize(vector)
+      Cuánto del mundo entra en la vista.
+      -> Camara.cpp (constructor y ajustarAVentana)
+
+
+----------------------------------------------------------------------------------------------------
+7. TIPOS DE DATOS AUXILIARES
+----------------------------------------------------------------------------------------------------
+  sf::Vector2f   dos números con decimales: .x y .y   (posiciones en el mundo)
+  sf::Vector2i   dos enteros: .x y .y                  (píxeles del mouse, casillas)
+  sf::Vector2u   dos enteros sin signo: .x y .y        (tamaños, como el de la ventana)
+      -> Juego.cpp, Mapa.cpp, Camara.cpp, Personaje.cpp
+
+  sf::FloatRect  un rectángulo: .left, .top (esquina de arriba a la izquierda), .width, .height
+      Lo devuelven getLocalBounds() y getGlobalBounds(), y se usa para crear una sf::View.
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+
+  rectangulo.contains(punto)
+      Devuelve true si el punto (sf::Vector2f) cae adentro del rectángulo.
+      El menú lo usa para saber si el mouse está sobre una opción.
+      -> Menu.cpp (procesarEvento)
+
+  sf::Color(rojo, verde, azul)
+      Un color, cada parte de 0 a 255. Un cuarto número opcional es la transparencia (alfa):
+      0 = invisible, 255 = opaco. Los colores del juego están en la paleta de CONTRIBUTING.md.
+      -> Menu.cpp
+
+  sf::VideoMode(ancho, alto)
+      El tamaño con el que se crea la ventana.
+      -> Juego.cpp (constructor)

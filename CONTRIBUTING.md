@@ -72,7 +72,60 @@ pero la cámara le pide el tamaño a un mapa que todavía no existe.
 - **Las imágenes van en `Imagenes/`** y se cargan con ruta relativa: `"Imagenes/suelo.png"`.
 - **PNG con fondo transparente.**
 - **Nombres:** las baldosas isométricas terminan en `_iso.png` (`suelo_iso.png`). Las sin `_iso` son las
-  viejas de vista de arriba: no las pisen.
+  viejas de vista de arriba: no las pisen. Lo de cada pantalla empieza con su nombre (`menu_fondo.png`).
+- **Pixel art nítido:** escalar solo por números enteros (×2, ×3), nunca ×1.5, porque los píxeles quedan
+  de distinto tamaño.
+
+### Paleta
+
+Todo el juego usa estos colores. Si algo nuevo no combina, probablemente esté usando un color de afuera.
+
+| Nombre | Hex | En SFML | Para qué |
+|---|---|---|---|
+| Fondo | `#0B0D1A` | `sf::Color(11, 13, 26)` | Fondo de todas las pantallas (`window.clear(...)`) |
+| Pizarra | `#3A4258` | `sf::Color(58, 66, 88)` | Paneles, barras vacías, bordes |
+| Piedra | `#B8B2A4` | `sf::Color(184, 178, 164)` | Texto normal |
+| Tenue | `#5C657C` | `sf::Color(92, 101, 124)` | Texto secundario, opciones deshabilitadas |
+| **Gema** | `#5FE0E8` | `sf::Color(95, 224, 232)` | **Solo lo importante:** opción elegida, títulos, maná |
+| Gema oscura | `#2E8CA6` | `sf::Color(46, 140, 166)` | Sombras de lo que es Gema |
+| Peligro | `#B04A4A` | `sf::Color(176, 74, 74)` | Vida, daño, avisos |
+
+El celeste **Gema** sale de la piedra del báculo del mago. Si se usa para todo, deja de llamar la atención.
+
+### Fuente
+
+**Pixelify Sans** (`Fuentes/PixelifySans-Regular.ttf`), una sola para todo el juego. Licencia libre (OFL):
+se puede usar y entregar, siempre que `OFL.txt` viaje con la fuente.
+
+- Tamaños: **22** para opciones y textos, **11** para letra chica. Son los tamaños en los que la fuente
+  queda alineada a su grilla de píxeles; otros se ven borrosos.
+- Los títulos grandes no se escriben con la fuente: son imágenes (`menu_titulo.png`), porque están
+  retocados a mano.
+- **Tildes:** SFML no lee bien el texto con tildes si se le pasa directo. Usar
+  `sf::String::fromUtf8(...)`:
+  ```cpp
+  std::string texto = "Cómo jugar";
+  sf::Text opcion(sf::String::fromUtf8(texto.begin(), texto.end()), fuente, 22);
+  ```
+
+### Menú principal
+
+Pantalla de **800×600** con su propia vista fija (`sf::View(sf::FloatRect(0, 0, 800, 600))`), así las medidas
+de abajo valen aunque cambie el tamaño de la ventana. `Imagenes/vista_previa_menu.png` muestra cómo
+tiene que quedar.
+
+| Qué | Archivo | Dónde |
+|---|---|---|
+| Fondo | `menu_fondo.png` (800×600) | En (0, 0). Escena general: la torre de noche, el mago a la izquierda y los tres enemigos a la derecha. Deja libres el lugar del título y el de las opciones. |
+| Título | `menu_titulo.png` (524×84) | Centrado en x, arriba en **y = 48** → posición (138, 48). |
+| Opciones | texto, fuente 22 | Centradas en x. La primera con su centro en **y = 400**, las demás cada **40 px**. |
+| Selector | `menu_selector.png` (18×18) | A la izquierda de la opción elegida, **14 px** antes del texto, centrado en su altura. |
+| Pie | texto, fuente 11, color Tenue | Abajo a la derecha, a 16 px de cada borde. |
+
+- Opción normal: color **Piedra**. Opción elegida (o con el mouse encima): color **Gema** + selector.
+- Opción que no se puede usar (por ejemplo "Continuar" sin partida guardada): color **Tenue**, sin selector.
+- Opcional: que el selector "respire" cambiando su transparencia (alfa entre 150 y 255) en un ciclo de
+  ~1,5 segundos.
 
 ### Baldosas isométricas
 

@@ -1,8 +1,10 @@
 #pragma once
 #include <SFML/graphics.hpp>
+#include "Camara.h"
+#include "EstadoJuego.h"
 #include "Mapa.h"
 #include "Mago.h"
-#include "Camara.h"
+#include "Menu.h"
 
 class Juego {
 	private:
@@ -16,6 +18,8 @@ class Juego {
 		Mapa mapa;
 		Mago mago;
 		Camara camara;
+		Menu menu;
+		EstadoJuego estado;
 
 		void procesarEventos();
 		void dibujar();
