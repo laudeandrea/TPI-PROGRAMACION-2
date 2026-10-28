@@ -5,6 +5,7 @@
 Juego::Juego()
 	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El codice del Mago"),
 	  mago(4,1),
+	  golem(1,5),
 	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA), estado(EstadoJuego::MENU)
 {
 	//Inicialización de la ventana
@@ -84,6 +85,7 @@ void Juego::dibujar() {
 		camara.aplicar(window);
 		mapa.mostrar(window);
 		mago.mostrar(window,mapa);
+		golem.mostrar(window,mapa);
 	}
 
 	window.display();

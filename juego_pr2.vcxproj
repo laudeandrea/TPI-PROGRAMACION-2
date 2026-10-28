@@ -169,6 +169,8 @@ xcopy /Y /D /I /E "$(ProjectDir)Fuentes" "$(OutDir)Fuentes"</Command>
   <ItemGroup>
     <ClCompile Include="src\Camara.cpp" />
     <ClCompile Include="src\Casilla.cpp" />
+    <ClCompile Include="src\Enemigo.cpp" />
+    <ClCompile Include="src\Golem.cpp" />
     <ClCompile Include="src\Juego.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mago.cpp" />
@@ -179,7 +181,9 @@ xcopy /Y /D /I /E "$(ProjectDir)Fuentes" "$(OutDir)Fuentes"</Command>
   <ItemGroup>
     <ClInclude Include="src\Camara.h" />
     <ClInclude Include="src\Casilla.h" />
+    <ClInclude Include="src\Enemigo.h" />
     <ClInclude Include="src\EstadoJuego.h" />
+    <ClInclude Include="src\Golem.h" />
     <ClInclude Include="src\Juego.h" />
     <ClInclude Include="src\Mago.h" />
     <ClInclude Include="src\Mapa.h" />

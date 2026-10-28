@@ -2,6 +2,7 @@
 #include <SFML/graphics.hpp>
 #include "Camara.h"
 #include "EstadoJuego.h"
+#include "Golem.h"
 #include "Mapa.h"
 #include "Mago.h"
 #include "Menu.h"
@@ -17,6 +18,7 @@ class Juego {
 		sf::RenderWindow window;
 		Mapa mapa;
 		Mago mago;
+		Golem golem;
 		Camara camara;
 		Menu menu;
 		EstadoJuego estado;
