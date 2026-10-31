@@ -11,7 +11,8 @@ Para entender cómo está armado el código, primero leé la sección "Cómo fun
 - **Nada de funciones globales.** Todo va en una clase. Si una función no encaja en ninguna clase
   existente, probablemente haga falta una clase nueva.
 - **Cada clase tiene su `.h` y su `.cpp`** en `src/`. El `.h` tiene la declaración y el `.cpp` la
-  implementación. Excepción: los `enum` (como `TipoTerreno`) solo necesitan `.h`.
+  implementación. Excepción: los `enum` no llevan archivo propio; van en el `.h` de la clase que los
+  usa (como `TipoTerreno` en `Casilla.h`), declarados antes de la clase.
 - **Atributos privados.** Si otra clase necesita un dato, se le da un método público (`get...`).
 - **Excepción, clases base:** en las clases de las que heredan otras (como `Personaje`), los atributos
   que necesitan las hijas van en `protected`, no en `private`. Con `private`, `Mago` no podría usar la

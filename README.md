@@ -61,8 +61,8 @@ build/                 Generado al compilar (ignorado por git)
 | `Camara` | `Camara.h` / `Camara.cpp` | Encuadra el tablero y lo adapta al tamaño de la ventana sin deformarlo. |
 | `Personaje` | `Personaje.h` / `Personaje.cpp` | Clase base de todo lo que se para en el tablero: en qué casilla está, su vida, su imagen y cómo dibujarse. |
 | `Mago` | `Mago.h` / `Mago.cpp` | Hereda de `Personaje`. Agrega el maná y carga su propia imagen. |
-| `TipoTerreno` | `TipoTerreno.h` | `enum` con los terrenos posibles: `SUELO`, `COLUMNAROTA`, `ABISMO`. |
-| `EstadoJuego` | `EstadoJuego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `JUGANDO`. |
+| `TipoTerreno` | `Casilla.h` | `enum` con los terrenos posibles: `SUELO`, `COLUMNAROTA`, `ABISMO`. |
+| `EstadoJuego` | `Juego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `JUGANDO`. |
 
 `main.cpp` solo crea un `Juego` y llama a `ejecutar()`.
 

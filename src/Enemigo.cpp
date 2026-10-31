@@ -7,3 +7,4 @@ Enemigo::Enemigo(int _fila, int _columna, int _vida, int _danio)
 int Enemigo::getDanio() const {
 	return danio;
 }
+

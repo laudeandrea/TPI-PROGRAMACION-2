@@ -3,9 +3,12 @@
 // La ventana y la camara se crean en la lista de inicializacion (despues de los ":")
 // porque no tienen constructor sin parametros
 Juego::Juego()
-	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El codice del Mago"),
+	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El Codice Del Mago"),
 	  mago(4,1),
+	  caballero(4,6),
+	  espectro(1,3),
 	  golem(1,5),
+	  codice(5,0,TipoHabilidad::BOLADEFUEGO),
 	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA), estado(EstadoJuego::MENU)
 {
 	//Inicialización de la ventana
@@ -85,7 +88,10 @@ void Juego::dibujar() {
 		camara.aplicar(window);
 		mapa.mostrar(window);
 		mago.mostrar(window,mapa);
+		caballero.mostrar(window,mapa);
+		espectro.mostrar(window,mapa);
 		golem.mostrar(window,mapa);
+		codice.mostrar(window,mapa);
 	}
 
 	window.display();

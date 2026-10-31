@@ -1,5 +1,10 @@
 #pragma once
-#include "TipoTerreno.h"
+
+enum class TipoTerreno {
+	SUELO,
+	COLUMNAROTA,
+	ABISMO
+};
 
 class Casilla {
 	private:

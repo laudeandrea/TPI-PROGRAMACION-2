@@ -8,10 +8,10 @@ Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no est�
 
 Última actualización: 26/10/2026
 
-
 ----------------------------------------------------------------------------------------------------
 1. LA VENTANA: sf::RenderWindow
 ----------------------------------------------------------------------------------------------------
+
 La ventana del juego. Además de mostrarse en pantalla, se puede dibujar adentro.
 Se crea una sola vez, en Juego.
 

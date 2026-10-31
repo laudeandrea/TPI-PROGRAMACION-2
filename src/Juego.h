@@ -1,11 +1,18 @@
 #pragma once
 #include <SFML/graphics.hpp>
 #include "Camara.h"
-#include "EstadoJuego.h"
-#include "Golem.h"
 #include "Mapa.h"
 #include "Mago.h"
 #include "Menu.h"
+#include "Caballero.h"
+#include "Golem.h"
+#include "Espectro.h"
+#include "Pergamino.h"
+
+enum class EstadoJuego{
+    MENU,
+    JUGANDO
+};
 
 class Juego {
 	private:
@@ -13,12 +20,15 @@ class Juego {
 		static const int ALTO_VENTANA = 600;
 		static constexpr float MARGEN_CAMARA = 64.f; // espacio alrededor del tablero para el HUD
 
-		// IMPORTANTE: el orden importa. C++ crea los atributos en el orden en que estan declarados,
+		// El orden importa. C++ crea los atributos en el orden en que estan declarados,
 		// y la camara necesita que el mapa ya exista (usa mapa.getTamanioMundo())
 		sf::RenderWindow window;
 		Mapa mapa;
 		Mago mago;
 		Golem golem;
+		Espectro espectro;
+		Caballero caballero;
+		Pergamino codice;
 		Camara camara;
 		Menu menu;
 		EstadoJuego estado;
