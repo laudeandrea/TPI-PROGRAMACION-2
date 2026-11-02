@@ -28,6 +28,33 @@ void Personaje::mover (int _fila, int _columna){
 	columna = _columna;
 };
 
-void Personaje::recibirDanio(){
-    
+int Personaje::getFila() const {
+	return fila;
+};
+
+int Personaje::getColumna() const {
+	return columna;
+};
+
+int Personaje::getVida() const {
+	return vida;
+};
+
+bool Personaje::estaVivo() const {
+	return vida > 0;
+};
+
+bool Personaje::estaEn(int _fila, int _columna) const {
+	return fila == _fila && columna == _columna;
+};
+
+bool Personaje::puedePisar(TipoTerreno terreno) const {
+	return terreno == TipoTerreno::SUELO;
+};
+
+void Personaje::recibirDanio(int cantidad){
+	vida -= cantidad;
+	if (vida < 0) {
+		vida = 0;
+	}
 };

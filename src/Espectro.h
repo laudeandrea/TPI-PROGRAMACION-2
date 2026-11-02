@@ -7,4 +7,6 @@ class Espectro : public Enemigo {
 		static const int DANIO = 15;
 	public:
 		Espectro(int _fila, int _columna);
+		/** @brief Es fantasma: atraviesa columnas rotas y vuela sobre el abismo. */
+		bool puedePisar(TipoTerreno terreno) const override;
 };

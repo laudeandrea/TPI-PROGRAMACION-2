@@ -19,5 +19,9 @@ class Mapa {
 		sf::Vector2i mundoAcasilla(sf::Vector2f posicion) const;
 		sf::Vector2f getTamanioMundo() const;
 		void mover();
-		bool esValida(int _fila, int _columna);
+		bool esValida(int _fila, int _columna) const;
+		/*Si la fila y la columna caen dentro del tablero. No mira el terreno. */
+		bool estaDentro(int _fila, int _columna) const;
+		/*Terreno de una casilla. Hay que llamar antes a estaDentro(). */
+		TipoTerreno getTipoTerreno(int _fila, int _columna) const;
 };

@@ -1,16 +1,19 @@
 #include "Juego.h"
+#include <algorithm>
 
 // La ventana y la camara se crean en la lista de inicializacion (despues de los ":")
 // porque no tienen constructor sin parametros
 Juego::Juego()
 	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El Codice Del Mago"),
 	  mago(4,1),
-	  caballero(4,6),
-	  espectro(1,3),
-	  golem(1,5),
 	  codice(5,0,TipoHabilidad::BOLADEFUEGO),
-	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA), estado(EstadoJuego::MENU)
+	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA), 
+	  estado(EstadoJuego::MENU),
+	  fase(FaseTurno::JUGADOR)
 {
+	enemigos.push_back(std::make_unique<Caballero>(4, 6));
+	enemigos.push_back(std::make_unique<Espectro>(1, 3));
+	enemigos.push_back(std::make_unique<Golem>(1, 5));
 	//Inicialización de la ventana
 	window.setFramerateLimit(60);
 
@@ -30,7 +33,7 @@ void Juego::ejecutar() {
 	{
 		// Read Input (Actualiza los estados de los periféricos de entrada)
 		procesarEventos();
-
+		actualizar();
 		dibujar();
 	}
 };
@@ -53,6 +56,7 @@ void Juego::procesarEventos() {
 			int opcion = menu.procesarEvento(event, window);
 			if (opcion == 0) {              // Nueva partida
 				estado = EstadoJuego::JUGANDO;
+				fase = FaseTurno::JUGADOR;
 			}
 			if (opcion == 2) {              // Salir
 				window.close();
@@ -65,18 +69,38 @@ void Juego::procesarEventos() {
 				estado = EstadoJuego::MENU;
 			}
 
-			// Click izquierdo mueve al mago a la casilla clickeada si es terreno tipo suelo
+			// Click izquierdo mueve al mago si el terreno se lo permite y la casilla esta libre
 			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left){
 				sf::Vector2i pixel(event.mouseButton.x, event.mouseButton.y);
 				sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel);
 				sf::Vector2i casilla = mapa.mundoAcasilla(posicionMundo);
 
-				if (mapa.esValida(casilla.y, casilla.x)){
+				if (fase == FaseTurno::JUGADOR && puedeMover(mago, casilla.y, casilla.x)) {
 					mago.mover(casilla.y, casilla.x);
+					fase = FaseTurno::ENEMIGOS;
 				}
 			}
 		}
 	}
+	
+};
+
+bool Juego::casillaOcupada(int fila, int columna) const {
+	if (mago.estaEn(fila, columna)) return true;
+	for (const auto& enemigo : enemigos) {
+		if (enemigo->estaEn(fila, columna)) return true;
+	}
+	return false;
+};
+
+bool Juego::puedeMover(const Personaje& quien, int fila, int columna) const {
+	if (!mapa.estaDentro(fila, columna)) {
+		return false;
+	}
+	if (!quien.puedePisar(mapa.getTipoTerreno(fila, columna))) {
+		return false;
+	}
+	return !casillaOcupada(fila, columna);
 };
 
 void Juego::dibujar() {
@@ -87,12 +111,34 @@ void Juego::dibujar() {
 	}else{
 		camara.aplicar(window);
 		mapa.mostrar(window);
-		mago.mostrar(window,mapa);
-		caballero.mostrar(window,mapa);
-		espectro.mostrar(window,mapa);
-		golem.mostrar(window,mapa);
+		/* personajes ordenados por profundidad, lo de adelante se dibuja ultimo */
+		std::vector<Personaje*> personajes;
+		personajes.push_back(&mago);
+		for (const auto& enemigo : enemigos) personajes.push_back(enemigo.get());
+
+		std::sort(personajes.begin(), personajes.end(),
+			[](const Personaje* a, const Personaje* b) {
+				return (a->getFila() + a->getColumna()) < (b->getFila() + b->getColumna());
+			});
+
+		for (const Personaje* p : personajes) p->mostrar(window, mapa);
 		codice.mostrar(window,mapa);
 	}
 
 	window.display();
 };
+
+void Juego::actualizar() {
+	if (estado != EstadoJuego::JUGANDO || fase != FaseTurno::ENEMIGOS) return;
+	for (auto& enemigo : enemigos) {
+		if (!enemigo->estaVivo()) continue;
+
+		sf::Vector2i destino = enemigo->calcularPaso(mapa, mago);
+
+		bool quiereMoverse = !enemigo->estaEn(destino.y, destino.x);
+		if (quiereMoverse && puedeMover(*enemigo, destino.y, destino.x)) {
+			enemigo->mover(destino.y, destino.x);
+		}
+	}
+	fase = FaseTurno::JUGADOR;
+}
