@@ -10,4 +10,6 @@ class Camara {
 		Camara(sf::Vector2f tamanioMundo, float margen);
 		void ajustarAVentana(sf::Vector2u tamanioVentana);
 		void aplicar(sf::RenderWindow& ventana) const;
+		/** @brief La vista de la camara, para convertir posiciones del mundo a la pantalla (HUD). */
+		const sf::View& getVista() const;
 };

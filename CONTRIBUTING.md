@@ -89,6 +89,8 @@ Todo el juego usa estos colores. Si algo nuevo no combina, probablemente esté u
 | Tenue | `#5C657C` | `sf::Color(92, 101, 124)` | Texto secundario, opciones deshabilitadas |
 | **Gema** | `#5FE0E8` | `sf::Color(95, 224, 232)` | **Solo lo importante:** opción elegida, títulos, maná |
 | Gema oscura | `#2E8CA6` | `sf::Color(46, 140, 166)` | Sombras de lo que es Gema |
+| Vacío | `#5C4096` | `sf::Color(92, 64, 150)` | El vacío debajo del tablero y la niebla de los abismos |
+| Vacío claro | `#9676D6` | `sf::Color(150, 118, 214)` | Brillos y motas que suben del vacío |
 | Peligro | `#B04A4A` | `sf::Color(176, 74, 74)` | Vida, daño, avisos |
 
 El celeste **Gema** sale de la piedra del báculo del mago. Si se usa para todo, deja de llamar la atención.
@@ -111,15 +113,15 @@ se puede usar y entregar, siempre que `OFL.txt` viaje con la fuente.
 
 ### Menú principal
 
-Pantalla de **800×600** con su propia vista fija (`sf::View(sf::FloatRect(0, 0, 800, 600))`), así las medidas
+Pantalla de **1280×720** con su propia vista fija (`sf::View(sf::FloatRect(0, 0, 1280, 720))`), así las medidas
 de abajo valen aunque cambie el tamaño de la ventana. `Imagenes/vista_previa_menu.png` muestra cómo
 tiene que quedar.
 
 | Qué | Archivo | Dónde |
 |---|---|---|
-| Fondo | `menu_fondo.png` (800×600) | En (0, 0). Escena general: la torre de noche, el mago a la izquierda y los tres enemigos a la derecha. Deja libres el lugar del título y el de las opciones. |
-| Título | `menu_titulo.png` (524×84) | Centrado en x, arriba en **y = 48** → posición (138, 48). |
-| Opciones | texto, fuente 22 | Centradas en x. La primera con su centro en **y = 400**, las demás cada **40 px**. |
+| Fondo | `menu_fondo.png` (1280×720) | En (0, 0). Escena general: la torre de noche, el mago a la izquierda y los tres enemigos a la derecha. Deja libres el lugar del título y el de las opciones. |
+| Título | `menu_titulo.png` (524×84) | Centrado en x, arriba en **y = 168** → posición (378, 168). |
+| Opciones | texto, fuente 22 | Centradas en x (**x = 640**). La primera con su centro en **y = 520**, las demás cada **40 px**. |
 | Selector | `menu_selector.png` (18×18) | A la izquierda de la opción elegida, **14 px** antes del texto, centrado en su altura. |
 | Pie | texto, fuente 11, color Tenue | Abajo a la derecha, a 16 px de cada borde. |
 
@@ -138,21 +140,105 @@ y = 0    ┌──────────┐
          │          │  espacio libre (30 px) para lo que sobresale hacia arriba
          │          │  (la columna rota, por ejemplo)
 y = 30   │    /\    │  ← vértice de arriba del rombo
-y = 46   │  < ● >   │  ← centro del rombo = vértices izquierdo y derecho
-y = 62   │  |\/ |   │  ← vértice de abajo del rombo
-         │  \ | /   │  costados del cubo
-y = 79   └──────────┘  ← fondo de la imagen
+y = 50   │  < ● >   │  ← centro del rombo = vértices izquierdo y derecho
+y = 70   │  |\/ |   │  ← vértice de abajo del rombo
+         │  \ | /   │  costados del cubo (14 px)
+y = 83   └──────────┘  ← fondo de la imagen
            64 px
 ```
 
-- **Lienzo de 64×80**, fondo transparente.
-- **Cara de arriba:** rombo de 64×32, con bordes en escalera de **2 píxeles al costado por 1 hacia abajo**.
-  Vértice de arriba en y = 30, centro en **y = 46** (34 px desde el fondo de la imagen).
-- **Costados:** debajo del rombo, hasta el fondo de la imagen.
+- **Lienzo de 64×84**, fondo transparente.
+- **Cara de arriba:** rombo de **64×40** (`ANCHO_CASILLAS` × `ALTO_CASILLAS` en `Mapa.h`). Vértice de arriba en
+  y = 30, centro en **y = 50** (**34 px desde el fondo** de la imagen, que es `CENTRO_ROMBO_DESDE_ABAJO`).
+- **Perspectiva:** 40 de alto y no 32 (el isométrico clásico 2:1) para que el tablero se vea un poco más
+  desde arriba. Si algún día se cambia, hay que cambiar `ALTO_CASILLAS` **y** volver a generar todo el arte
+  con el script (`ALTO_ROMBO`); si no coinciden, las baldosas se pisan o quedan separadas.
+- **Costados:** 14 px debajo del rombo, hasta el fondo de la imagen.
 - **Lo que sobresale** (columnas, rocas) va hacia arriba, en los 30 px libres. No se puede correr el cubo
   hacia abajo para hacerle lugar.
-- **Abismo:** imagen casi transparente, así se ve el fondo y los costados de los cubos vecinos.
-- **Misma luz en todas:** la cara de arriba más clara y los dos costados más oscuros, siempre del mismo lado.
+- **Abismo:** casi transparente, con unas motas de luz violeta. El pozo se ve gracias a las **paredes de
+  pozo** de las casillas de atrás (ver abajo), así varias casillas de abismo juntas se leen como un solo agujero.
+- **Misma luz en todas:** la luz viene de arriba. En la cara de arriba, el borde de atrás es más claro y el
+  de adelante más oscuro; el costado izquierdo es más claro que el derecho.
+
+### Estilo: la cripta flota sobre el vacío
+
+El tablero es una **isla de piedra flotando sobre un vacío violeta**. Abajo del borde cuelga roca rota, y
+el mismo vacío se ve por los pozos del abismo, así que se entiende qué pasa si alguien cae.
+Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (1280×720, escala ×2).
+
+| Archivo | Lienzo | Qué es |
+|---|---|---|
+| `suelo_1_iso.png` | 64×84 | Lisa (4 losas por casilla). La más común (~60 % de las casillas). |
+| `suelo_2_iso.png` | 64×84 | Con una grieta (~15 %). |
+| `suelo_3_iso.png` | 64×84 | Con musgo en una esquina (~15 %). |
+| `suelo_4_iso.png` | 64×84 | Con una runa grabada que apenas brilla (~10 %). Usarla poco: si hay muchas, dejan de llamar la atención. |
+| `columna_rota_iso.png` | 64×84 | Columna rota sobre un pedestal cuadrado grande, encima de una baldosa lisa. |
+| `abismo_iso.png` | 64×84 | Casilla de abismo (ver arriba). |
+| `pared_izquierda_iso.png` | 64×128 | Roca que cuelga debajo del borde de **abajo-izquierda** del rombo (borde de la isla). |
+| `pared_derecha_iso.png` | 64×128 | Igual, debajo del borde de **abajo-derecha**. Más oscura (lado sin luz). |
+| `pozo_izquierda_iso.png` | 64×160 | Pared de adentro de un pozo: piedra tallada que baja y se pierde en la oscuridad. |
+| `pozo_derecha_iso.png` | 64×160 | Igual, del lado derecho. |
+| `fondo_juego.png` | 1280×720 | Fondo de la pantalla de juego: oscuro arriba, el vacío violeta abajo. |
+| `sombra_personaje.png` | 28×10 | Sombra ovalada que va en los pies de cada personaje. |
+
+- **Mismo centro en todas:** el centro del rombo está siempre a **50 px desde arriba** de la imagen, también
+  en las paredes y pozos (aunque sean más altos). Por eso a las paredes no les sirve `CENTRO_ROMBO_DESDE_ABAJO`:
+  el origen se pone en `(32, 50)`.
+- **Las variantes de suelo se eligen una sola vez** (al crear el mapa) y se guardan; si se eligieran en
+  cada `mostrar()` el piso titilaría.
+- **Qué pared va:** en una casilla que no es abismo, se mira la casilla de adelante (`fila + 1` para la
+  izquierda, `columna + 1` para la derecha):
+
+  | Casilla de adelante | Pared |
+  |---|---|
+  | Fuera del tablero | `pared_*_iso` (roca que cuelga bajo la isla) |
+  | Abismo | `pozo_*_iso` (pared de adentro del pozo) |
+  | Suelo o columna | ninguna |
+- **Orden:** primero las paredes de la casilla y después su baldosa. La parte de arriba de la pared queda
+  tapada por el costado de la baldosa.
+- **El abismo conviene adentro del tablero**, no en el borde: en el borde parece que al tablero le falta un
+  pedazo. Rodeado de suelo se lee como un pozo.
+- **Fondo:** se dibuja primero y con la vista normal de la ventana (`window.getDefaultView()`), no con la de
+  la cámara, así queda fijo y cubre toda la pantalla.
+- **Sombra:** origen en su centro `(14, 5)`, puesta en el mismo punto que los pies del personaje y dibujada
+  **antes** que él.
+- **La grilla:** el borde de cada baldosa es la línea más oscura (`#12141F`), así se distingue cada casilla.
+  Adentro, cada casilla tiene **4 losas biseladas** (luz arriba, sombra abajo) separadas por juntas un poco
+  más claras que el borde.
+- **Pocos detalles:** el piso es el fondo de la acción. Como mucho un reflejo suave por losa (y solo en la
+  mitad de ellas); la grieta, el musgo y la runa son pocos y suaves para que no distraigan de los personajes.
+- **Cómo se generan:** todas estas imágenes salen de [herramientas/generar_arte_mapa.py](herramientas/generar_arte_mapa.py).
+  Para cambiar algo (un color, una variante nueva), se edita el script y se corre desde la raíz del repo:
+  `python herramientas/generar_arte_mapa.py` (hace falta `pip install pillow`). Deja los PNG en `salida_arte/`
+  (ignorada por git); se revisan y después se copian a `Imagenes/`. No retoques los PNG a mano: la próxima
+  vez que alguien corra el script se pierde el retoque.
+
+### Habilidades y HUD
+
+| Archivo | Lienzo | Qué es | Origen |
+|---|---|---|---|
+| `marcador_movimiento.png` | 64×40 | Rombo **Piedra** transparente: casilla a la que el mago puede caminar (después de clickearlo). | `(32, 20)` |
+| `marcador_alcance.png` | 64×40 | Rombo **Gema** transparente: casilla a la que llega la habilidad. | Centro del rombo, `(32, 20)` |
+| `marcador_objetivo.png` | 64×40 | Igual, en rojo (**Peligro**): hay un enemigo al alcance. | `(32, 20)` |
+| `bola_energia.png` | 32×16 | Bola de energía: **2 cuadros de 16×16** uno al lado del otro, se alternan cada 0,1 s. | Centro del cuadro, `(8, 8)` |
+
+- **Marcadores:** son 1 px más chicos que el rombo de la baldosa, para que la junta oscura se siga viendo,
+  y el relleno es tramado y casi transparente, para que se vea el piso. Se dibujan después del mapa y antes
+  que los personajes. En el abismo solo se marca si hay un enemigo (el espectro vuela).
+- **La bola** sale del pecho del mago y pega en el pecho del enemigo: **30 px arriba de los pies**
+  (`ALTURA_PECHO` en `Juego.h`).
+- **Barra de vida de los enemigos:** 32×4 px (del mundo), 6 px arriba de la imagen del personaje.
+  Vacía en **Pizarra**, llena en **Peligro**, con un borde de 1 px color **Fondo**.
+- **HUD de maná** (fijo en la pantalla, abajo a la izquierda, en (32, 612)): título "Mana" en **Piedra**,
+  un rectángulo de 16×12 por cada punto (lleno en **Gema**, vacío en **Pizarra**; con la Q apretada, los
+  puntos que se van a gastar en **Gema oscura**) y el número "8/10" en **Gema**. Abajo, la ayuda de la
+  habilidad: **Piedra** normal, **Gema** con la Q apretada, **Tenue** si no alcanza el maná.
+- **Números de daño:** "-10" en rojo claro (`#E8786E`), fuente 22 con borde **Fondo** de 2 px. Aparecen
+  arriba de la cabeza, suben 22 px en 0,9 s y en la segunda mitad se desvanecen.
+- **Todo el texto del HUD es tamaño 22** y lleva un borde oscuro de 2 px, para leerse sobre cualquier cosa.
+- **Cómo se generan:** [herramientas/generar_arte_habilidad.py](herramientas/generar_arte_habilidad.py),
+  igual que el arte del mapa: `python herramientas/generar_arte_habilidad.py`.
 
 ## Git
 

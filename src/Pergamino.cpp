@@ -9,7 +9,11 @@
     texturaDaniado.loadFromFile("Imagenes/pergamino_codice_danio_iso.png");
 };
 
- void Pergamino::recibirDanio(int cantidadDanio){
+int Pergamino::getFila() const{ return fila; };
+    
+int Pergamino::getColumna() const{ return columna; };
+
+void Pergamino::recibirDanio(int cantidadDanio){
     vidaActual -= cantidadDanio;
     if(vidaActual < 0){
         vidaActual = 0;

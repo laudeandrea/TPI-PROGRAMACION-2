@@ -27,3 +27,7 @@ void Camara::ajustarAVentana(sf::Vector2u tamanioVentana) {
 void Camara::aplicar(sf::RenderWindow& ventana) const {
 	ventana.setView(vista);
 };
+
+const sf::View& Camara::getVista() const {
+	return vista;
+};

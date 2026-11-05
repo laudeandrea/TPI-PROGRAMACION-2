@@ -14,10 +14,10 @@ Menu::Menu(){
     selector.setTexture(texturaSelector);
     titulo.setTexture(texturaTitulo);
 
-    titulo.setPosition(138, 48);
+    titulo.setPosition(378, 168);
     
     // Arma la vista fija
-    vista = sf::View(sf::FloatRect(0, 0, 800, 600));
+    vista = sf::View(sf::FloatRect(0, 0, 1280, 720));
 
     // Se inicializa así no arranca con un valor basura
     seleccionada = 0;
@@ -36,7 +36,7 @@ Menu::Menu(){
         // std:: floor = redondea para abajo, saca los decimales
         opciones[i].setOrigin(std::floor(caja.left + caja.width / 2),
                             std::floor(caja.top + caja.height / 2));
-        opciones[i].setPosition(400.f, 400.f + i * 40.f);
+        opciones[i].setPosition(640.f, Y_PRIMERA_OPCION + i * SEPARACION_OPCIONES);
     }
 };
 
@@ -98,6 +98,6 @@ void Menu::dibujar(sf::RenderWindow& ventana){
 
     // Selector: 14 px a la izquierda del texto elegido, centrado en su altura
     sf::FloatRect caja = opciones[seleccionada].getGlobalBounds();
-    selector.setPosition(caja.left - 14.f - 18.f, 400.f + seleccionada * 40.f - 9.f);
+    selector.setPosition(caja.left - 14.f - 18.f, Y_PRIMERA_OPCION + seleccionada * SEPARACION_OPCIONES - 9.f);
     ventana.draw(selector);
 };

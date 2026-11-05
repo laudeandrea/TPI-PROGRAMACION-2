@@ -3,7 +3,7 @@
 #include <SFML/graphics.hpp>
 #include "Mapa.h"
 
-enum class TipoHabilidad { BOLADEFUEGO, EMPUJE, MURO, PASO_ETEREO};
+enum class TipoHabilidad { BOLADEENERGIA, EMPUJE, MURO, PASO_ETEREO};
 
 class Pergamino {
     private:
@@ -15,6 +15,8 @@ class Pergamino {
         sf::Texture texturaIntacto, texturaDaniado;
     public:
         Pergamino(int _fila, int _columna, TipoHabilidad _habilidad);
+        int getFila() const;
+        int getColumna() const;
         void recibirDanio(int cantidadDanio);
         bool estaDestruido() const;
         TipoHabilidad getHabilidad() const;

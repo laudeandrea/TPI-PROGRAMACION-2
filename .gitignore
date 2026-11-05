@@ -17,7 +17,7 @@
 /docs/
 /_plantilla_cmake/
 /.vscode
-SFML_usado.txt
+/salida_arte/
 
 # Configuracion personal de cada PC
 CMakeUserPresets.json

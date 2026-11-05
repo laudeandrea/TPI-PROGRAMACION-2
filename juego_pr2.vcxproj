@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -174,6 +174,9 @@ xcopy /Y /D /I /E "$(ProjectDir)Fuentes" "$(OutDir)Fuentes"</Command>
     <ClCompile Include="src\Enemigo.cpp" />
     <ClCompile Include="src\Espectro.cpp" />
     <ClCompile Include="src\Golem.cpp" />
+    <ClCompile Include="src\Habilidad.cpp" />
+    <ClCompile Include="src\Hud.cpp" />
+    <ClCompile Include="src\Proyectil.cpp" />
     <ClCompile Include="src\Juego.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mago.cpp" />
@@ -189,6 +192,9 @@ xcopy /Y /D /I /E "$(ProjectDir)Fuentes" "$(OutDir)Fuentes"</Command>
     <ClInclude Include="src\Enemigo.h" />
     <ClInclude Include="src\Espectro.h" />
     <ClInclude Include="src\Golem.h" />
+    <ClInclude Include="src\Habilidad.h" />
+    <ClInclude Include="src\Hud.h" />
+    <ClInclude Include="src\Proyectil.h" />
     <ClInclude Include="src\Juego.h" />
     <ClInclude Include="src\Mago.h" />
     <ClInclude Include="src\Mapa.h" />

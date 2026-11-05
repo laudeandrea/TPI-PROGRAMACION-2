@@ -1,5 +1,7 @@
 #include "Mapa.h"
 #include <cmath>
+#include <cstdlib>
+#include <string> // std::to_string, para armar el nombre de cada archivo de suelo
 
 Mapa::Mapa() {
 	// Dibujo de la matriz del mapa con cada tipo de suelo
@@ -8,19 +10,20 @@ Mapa::Mapa() {
 	const char disenio[8][9] = {
 
 	// S = suelo normal, C = columna rota, X = abismo
-	"SSSSSSXX",
-	"SSSSSSSX",
-	"SCSSSSXX",
-	"SSSSCSSX",
-	"SSSSSSSX",
-	"SSSSCSXX",
-	"SSCSSSSX",
-	"SSSSSXXX"
-	};
+	"SSSSSSSS",
+	"SSSSSSSS",
+	"SSCSXXSS",
+	"SSSSXXSS",
+	"SSSSSCSS",
+	"SSXXSSSS",
+	"SSXXSSCS",
+	"SSSSSSSS"
+};
 
 	for (int fila = 0;fila < 8;fila++) {
 		for (int columna = 0; columna < 8;columna++) {
 			switch (disenio[fila][columna]) {
+
 			case 'C':
 				casillas[fila][columna].setTipoTerreno(TipoTerreno::COLUMNAROTA);
 				break;
@@ -31,22 +34,66 @@ Mapa::Mapa() {
 				casillas[fila][columna].setTipoTerreno(TipoTerreno::SUELO);
 				break;
 			}
+
+			// Sorteo del dibujo de suelo de esta casilla (una sola vez, por eso va en el constructor)
+			int dado = std::rand() % 100; // numero de 0 a 99
+			if (dado < 60) {
+				variantesSuelo[fila][columna] = 0; // lisa (60 %)
+			} else if (dado < 75) {
+				variantesSuelo[fila][columna] = 1; // grieta (15 %)
+			} else if (dado < 90) {
+				variantesSuelo[fila][columna] = 2; // musgo (15 %)
+			} else {
+				variantesSuelo[fila][columna] = 3; // runa (10 %)
+			}
 		}
 	}
 
-texturaSuelo.loadFromFile("Imagenes/suelo_iso.png"); 
-texturaColumna.loadFromFile("Imagenes/columna_rota_iso.png");
-texturaAbismo.loadFromFile("Imagenes/abismo_iso.png");
+	// Variantes de suelo: suelo_1_iso.png ... suelo_4_iso.png (el numero del archivo es i + 1)
+	for (int i = 0; i < CANT_VARIANTES_SUELO; i++) {
+		texturasSuelo[i].loadFromFile("Imagenes/suelo_" + std::to_string(i + 1) + "_iso.png");
+	}
+
+	texturaColumna.loadFromFile("Imagenes/columna_rota_iso.png");
+	texturaAbismo.loadFromFile("Imagenes/abismo_iso.png");
+	texturaParedIzquierda.loadFromFile("Imagenes/pared_izquierda_iso.png");
+	texturaParedDerecha.loadFromFile("Imagenes/pared_derecha_iso.png");
+	texturaPozoIzquierda.loadFromFile("Imagenes/pozo_izquierda_iso.png");
+	texturaPozoDerecha.loadFromFile("Imagenes/pozo_derecha_iso.png");
 
 }
+
+// Dibuja una pared (roca o pozo) colgando bajo la casilla. Las imagenes de pared apoyan su punto (32, 50) en el centro del rombo
+void Mapa::dibujarPared(sf::RenderWindow& ventana, const sf::Texture& textura, int fila, int columna){
+	sf::Sprite pared(textura); // sprite nuevo: así toma el tamaño de ESTA textura
+	pared.setOrigin(ANCHO_CASILLAS / 2, CENTRO_ROMBO_DESDE_ARRIBA);
+	pared.setPosition(casillaAmundo(fila, columna));
+	ventana.draw(pared);
+};
 
 void Mapa::mostrar(sf::RenderWindow& ventana) {
 	
 	for (int fila = 0; fila < CANT_CASILLAS; fila++) {
 		for (int columna = 0; columna < CANT_CASILLAS; columna++) {
-		
-			sf::Sprite sprite;
 
+			// Paredes: van ANTES que la baldosa, asi la baldosa tapa la parte de arriba de la pared
+			if (casillas[fila][columna].getTipoTerreno() != TipoTerreno::ABISMO) {
+				// Lado izquierdo: mira la casilla de adelante-izquierda (fila + 1)
+				if (!estaDentro(fila + 1, columna)) {
+					dibujarPared(ventana, texturaParedIzquierda, fila, columna); // borde del tablero: roca colgando
+				} else if (getTipoTerreno(fila + 1, columna) == TipoTerreno::ABISMO) {
+					dibujarPared(ventana, texturaPozoIzquierda, fila, columna);  // adelante hay pozo
+				}
+				// Lado derecho: mira la casilla de adelante-derecha (columna + 1)
+				if (!estaDentro(fila, columna + 1)) {
+					dibujarPared(ventana, texturaParedDerecha, fila, columna);
+				} else if (getTipoTerreno(fila, columna + 1) == TipoTerreno::ABISMO) {
+					dibujarPared(ventana, texturaPozoDerecha, fila, columna);
+				}
+			}
+
+			sf::Sprite sprite;
+			
 			// La imagen que muestra, segun el tipo de casilla
 			switch (casillas[fila][columna].getTipoTerreno()) {
 				case TipoTerreno::COLUMNAROTA:
@@ -56,7 +103,7 @@ void Mapa::mostrar(sf::RenderWindow& ventana) {
 					sprite.setTexture(texturaAbismo);
 					break;
 				default:
-					sprite.setTexture(texturaSuelo);
+					sprite.setTexture(texturasSuelo[variantesSuelo[fila][columna]]);
 					break;
 			}
 
@@ -98,6 +145,10 @@ sf::Vector2f Mapa::getTamanioMundo() const{
 	return sf::Vector2f(CANT_CASILLAS * ANCHO_CASILLAS, CANT_CASILLAS * ALTO_CASILLAS);
 };
 
+int Mapa::getCantCasillas() const {
+	return CANT_CASILLAS;
+};
+
 void Mapa::mover() {
 
 };
@@ -116,4 +167,8 @@ bool Mapa::estaDentro(int _fila, int _columna) const {
 
 TipoTerreno Mapa::getTipoTerreno(int _fila, int _columna) const {
 	return casillas[_fila][_columna].getTipoTerreno();
+};
+
+void Mapa::setTipoTerreno(int _fila, int _columna, TipoTerreno _tipo){
+	casillas[_fila][_columna].setTipoTerreno(_tipo);
 };

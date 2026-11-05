@@ -2,6 +2,7 @@
 
 enum class TipoTerreno {
 	SUELO,
+	SUELO_OCUPADO,
 	COLUMNAROTA,
 	ABISMO
 };

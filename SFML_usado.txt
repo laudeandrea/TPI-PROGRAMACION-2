@@ -6,7 +6,7 @@ Todo lo de SFML empieza con "sf::". Versión: SFML 2.6.2.
 
 Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no está acá, falta agregarlo.
 
-Última actualización: 26/10/2026
+Última actualización: 04/11/2026
 
 ----------------------------------------------------------------------------------------------------
 1. LA VENTANA: sf::RenderWindow
@@ -15,7 +15,7 @@ Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no est�
 La ventana del juego. Además de mostrarse en pantalla, se puede dibujar adentro.
 Se crea una sola vez, en Juego.
 
-  sf::RenderWindow window(sf::VideoMode(800, 600), "El codice del Mago");
+  sf::RenderWindow window(sf::VideoMode(1280, 720), "El Codice Del Mago");
       Crea la ventana. sf::VideoMode es el tamaño en píxeles (ancho, alto); el texto es el título
       de la barra de arriba.
       -> Juego.cpp (constructor)
@@ -56,7 +56,9 @@ Se crea una sola vez, en Juego.
   window.draw(algo)
       Dibuja un sprite, un texto o cualquier cosa dibujable. Lo que se dibuja después queda arriba
       de lo anterior, así que el orden importa (fondo primero, personajes al final).
-      -> Mapa.cpp (mostrar), Personaje.cpp (mostrar), Menu.cpp (dibujar)
+      -> Juego.cpp (dibujar: el fondo y los marcadores), Mapa.cpp (mostrar), Personaje.cpp (mostrar
+         y mostrarBarraVida), Pergamino.cpp (mostrar), Menu.cpp (dibujar), Proyectil.cpp (mostrar),
+         Hud.cpp
 
   window.display()
       Muestra en pantalla todo lo que se dibujó. Hasta que no se llama, no se ve nada.
@@ -66,7 +68,21 @@ Se crea una sola vez, en Juego.
   window.setView(vista)
       Elige qué parte del mundo se ve en la ventana (ver sf::View más abajo).
       Todo lo que se dibuja después usa esa vista.
-      -> Camara.cpp (aplicar), Menu.cpp (dibujar)
+      -> Camara.cpp (aplicar), Menu.cpp (dibujar), Juego.cpp (dibujar)
+
+  window.getDefaultView()
+      La vista "de fábrica" de la ventana: muestra el rectángulo (0, 0, 1280, 720), o sea, la
+      ventana tal cual, sin cámara. El fondo del juego se dibuja con esta vista para que quede fijo
+      y cubra toda la pantalla; después se pone la vista de la cámara para dibujar el tablero.
+      ¡CUIDADO! Si después de getDefaultView() te olvidás de volver a poner la cámara, el tablero
+      se dibuja en otro lugar (sin el zoom ni el centrado de la cámara).
+      -> Juego.cpp (dibujar)
+
+  window.mapCoordsToPixel(punto, vista)
+      Lo contrario de mapPixelToCoords: en qué píxel de la ventana cae un punto del mundo, mirado
+      con esa vista. El HUD lo usa para los números de daño: sabe dónde está el enemigo en el mundo
+      (con la cámara) y lo pasa a la pantalla para escribir el "-10" ahí, con la vista por defecto.
+      -> Hud.cpp (dibujarNumeros)
 
   window.mapPixelToCoords(pixel)
   window.mapPixelToCoords(pixel, vista)
@@ -75,7 +91,10 @@ Se crea una sola vez, en Juego.
       otro lugar.
       Sin el segundo parámetro usa la vista que esté puesta en la ventana. Con él, usa la vista
       que le pases: el menú le pasa la suya, así funciona aunque la ventana cambie de tamaño.
-      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+      ¡CUIDADO! La vista que queda puesta es la ÚLTIMA que se usó al dibujar. En el juego es la del
+      HUD, no la de la cámara: por eso el click del tablero le pasa camara.getVista(). Sin eso, el
+      click cae en otra casilla.
+      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento), Hud.cpp (dibujarNumeros)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -114,6 +133,7 @@ Se leen con window.pollEvent(event).
         sf::Keyboard::Up / Down   -> flechas arriba y abajo
         sf::Keyboard::Enter       -> Enter
         sf::Keyboard::Escape      -> Escape (en el tablero, vuelve al menú)
+        sf::Keyboard::Q           -> Q (en el tablero, prepara o cancela la bola de energía)
       -> Menu.cpp (procesarEvento), Juego.cpp (procesarEventos)
 
   const sf::Event& evento (como parámetro)
@@ -140,7 +160,13 @@ Hay tres cosas distintas y es fácil confundirlas:
   textura.loadFromFile("Imagenes/archivo.png")
       Carga la imagen desde el disco. Devuelve false si no la encuentra.
       La ruta es relativa a la carpeta del .exe.
-      -> Juego.cpp (sf::Image del ícono), Mapa.cpp, Mago.cpp, Menu.cpp (sf::Texture)
+      -> Juego.cpp (sf::Image del ícono, sf::Texture del fondo), Mapa.cpp, Mago.cpp, Caballero.cpp,
+         Espectro.cpp, Golem.cpp, Pergamino.cpp, Menu.cpp (sf::Texture)
+
+      Las texturas también se pueden cargar en un for armando el nombre del archivo:
+        texturasSuelo[i].loadFromFile("Imagenes/suelo_" + std::to_string(i + 1) + "_iso.png");
+      (std::to_string no es de SFML: convierte un número en texto. Está en <string>.)
+      -> Mapa.cpp (constructor)
 
   imagen.getSize()
       Ancho y alto de la imagen en píxeles.
@@ -151,8 +177,30 @@ Hay tres cosas distintas y es fácil confundirlas:
       -> Juego.cpp (ícono)
 
   sprite.setTexture(textura)
-      Le dice al sprite qué textura mostrar.
-      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+  sprite.setTexture(textura, true)
+      Le dice al sprite qué textura mostrar. Primero hay que cargar la textura (loadFromFile) y
+      después hacer el setTexture: al revés, el sprite toma el tamaño de una textura vacía.
+      ¡CUIDADO! La primera vez, el sprite se queda con el tamaño de esa textura. Si después le das
+      otra de OTRO tamaño, sigue usando el tamaño viejo y la imagen se ve cortada, salvo que pases
+      true como segundo parámetro. Con un sf::Sprite nuevo para cada cosa no hay problema.
+      -> Juego.cpp (constructor: el fondo), Mapa.cpp, Personaje.cpp, Pergamino.cpp, Menu.cpp
+
+  sf::Sprite pared(textura);
+      Crea el sprite y le pone la textura en el mismo paso (es lo mismo que crearlo vacío y hacer
+      setTexture). Como es un sprite nuevo, toma el tamaño justo de esa textura: por eso las
+      paredes (64x128 la roca, 64x160 el pozo) no se cortan.
+      -> Mapa.cpp (dibujarPared), Proyectil.cpp (mostrar)
+
+  sprite.setTextureRect(sf::IntRect(x, y, ancho, alto))
+      Muestra solo un pedazo de la textura. Sirve para animar: la imagen de la bola de energía
+      tiene 2 cuadros de 16x16 uno al lado del otro, y según el tiempo se muestra el de x = 0 o el
+      de x = 16.
+      -> Proyectil.cpp (mostrar)
+
+  textura.getSize()
+      Ancho y alto de la textura en píxeles (sf::Vector2u). La barra de vida lo usa para saber
+      cuánto mide el personaje y ponerse arriba de su cabeza.
+      -> Personaje.cpp (mostrarBarraVida)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -166,11 +214,16 @@ Hay tres cosas distintas y es fácil confundirlas:
 
   fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf")
       Carga la fuente desde el disco. Devuelve false si no la encuentra.
-      -> Menu.cpp (constructor)
+      -> Menu.cpp (constructor), Hud.cpp (constructor)
+
+  fuente.setSmooth(false)
+      Apaga el suavizado de las letras. Pixelify Sans es pixel art: sin suavizado se ve nítida,
+      igual que el resto de las imágenes.
+      -> Hud.cpp (constructor)
 
   texto.setFont(fuente)
       Elige con qué fuente se escribe.
-      -> Menu.cpp (constructor)
+      -> Menu.cpp (constructor), Hud.cpp (crearTexto)
 
   texto.setString("...")
       Qué dice el texto. A diferencia de la fuente, el texto SÍ se copia, así que el string original
@@ -185,7 +238,13 @@ Hay tres cosas distintas y es fácil confundirlas:
 
   texto.setFillColor(sf::Color(...))
       Color de las letras.
-      -> Menu.cpp (constructor)
+      -> Menu.cpp (constructor), Hud.cpp (crearTexto)
+
+  texto.setOutlineThickness(2.f)
+  texto.setOutlineColor(sf::Color(...))
+      Un borde alrededor de cada letra, de ese grosor y color. El HUD usa un borde oscuro para que
+      el texto se lea encima de cualquier cosa (el piso, el vacío, un personaje).
+      -> Hud.cpp (crearTexto y dibujarNumeros)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -193,8 +252,8 @@ Hay tres cosas distintas y es fácil confundirlas:
 ----------------------------------------------------------------------------------------------------
   objeto.setPosition(x, y)   o   objeto.setPosition(vector)
       Dónde se dibuja el objeto. Lo que queda en (x, y) es su ORIGEN.
-      Recibe float. Si le pasás una cuenta con int (como 400 + i * 40), Visual Studio avisa
-      "conversión de 'int' a 'float'". Se evita escribiendo los números con .f: 400.f + i * 40.f
+      Recibe float. Si le pasás una cuenta con int (como 520 + i * 40), Visual Studio avisa
+      "conversión de 'int' a 'float'". Se evita escribiendo los números con .f: 520.f + i * 40.f
       -> Mapa.cpp, Personaje.cpp, Menu.cpp
 
   objeto.setOrigin(x, y)
@@ -202,7 +261,7 @@ Hay tres cosas distintas y es fácil confundirlas:
       Ejemplos del juego:
         - Personaje: el origen va en los pies (abajo al centro), así queda parado en la casilla.
         - Mapa: el origen va en el centro del rombo de la baldosa.
-        - Menu: el origen va en el centro del texto, así setPosition(400, ...) lo deja centrado.
+        - Menu: el origen va en el centro del texto, así setPosition(640, ...) lo deja centrado.
       -> Mapa.cpp, Personaje.cpp, Menu.cpp
 
   objeto.getLocalBounds()
@@ -223,8 +282,8 @@ Hay tres cosas distintas y es fácil confundirlas:
 Una vista es qué rectángulo del mundo se muestra en la ventana. Si ese rectángulo es más chico que
 la ventana, todo se ve agrandado; si es más grande, se ve achicado.
 
-  sf::View(sf::FloatRect(0, 0, 800, 600))
-      Crea una vista que muestra el rectángulo que empieza en (0, 0) y mide 800x600.
+  sf::View(sf::FloatRect(0, 0, 1280, 720))
+      Crea una vista que muestra el rectángulo que empieza en (0, 0) y mide 1280x720.
       El menú usa esta vista fija, así sus medidas no cambian aunque cambie la ventana.
       -> Menu.cpp (constructor)
 
@@ -238,12 +297,46 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
 
 
 ----------------------------------------------------------------------------------------------------
-7. TIPOS DE DATOS AUXILIARES
+7. FORMAS Y TIEMPO: sf::RectangleShape y sf::Clock
+----------------------------------------------------------------------------------------------------
+  sf::RectangleShape rectangulo(sf::Vector2f(ancho, alto))
+      Un rectángulo de color, sin imagen. Sirve para barras: la de vida de los enemigos y los
+      puntos de maná del HUD. Se ubica con setPosition como un sprite.
+      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarMana)
+
+  rectangulo.setFillColor(sf::Color(...))
+      Color de adentro.
+  rectangulo.setOutlineThickness(1.f)
+  rectangulo.setOutlineColor(sf::Color(...))
+      Borde alrededor, de ese grosor y color. El borde se dibuja POR FUERA del rectángulo.
+      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarMana)
+
+  sf::Clock reloj
+  reloj.restart()
+      Un cronómetro que empieza a contar apenas se crea. restart() devuelve cuánto tiempo pasó
+      (un sf::Time) y vuelve a empezar desde 0. Llamándolo una vez por vuelta del game loop se
+      obtiene el tiempo entre un cuadro y el siguiente ("dt", delta time).
+      Las animaciones usan dt para moverse a la misma velocidad aunque la PC sea más rápida o más
+      lenta: la bola avanza VELOCIDAD * dt píxeles en cada cuadro.
+      -> Juego.cpp (ejecutar)
+
+  tiempo.asSeconds()
+      Pasa un sf::Time a segundos, como float (por ejemplo 0.016 a 60 cuadros por segundo).
+      -> Juego.cpp (ejecutar)
+
+
+----------------------------------------------------------------------------------------------------
+8. TIPOS DE DATOS AUXILIARES
 ----------------------------------------------------------------------------------------------------
   sf::Vector2f   dos números con decimales: .x y .y   (posiciones en el mundo)
   sf::Vector2i   dos enteros: .x y .y                  (píxeles del mouse, casillas)
   sf::Vector2u   dos enteros sin signo: .x y .y        (tamaños, como el de la ventana)
-      -> Juego.cpp, Mapa.cpp, Camara.cpp, Personaje.cpp
+      -> Juego.cpp, Mapa.cpp, Camara.cpp, Personaje.cpp, Proyectil.cpp, Hud.cpp
+      Se pueden sumar, restar, y multiplicar o dividir por un número: así se mueve la bola
+      (posicion += direccion * paso) y se calcula el pecho del mago (pies - altura).
+
+  sf::IntRect    un rectángulo con enteros: (x, y, ancho, alto). Elige un pedazo de una textura.
+      -> Proyectil.cpp (mostrar)
 
   sf::FloatRect  un rectángulo: .left, .top (esquina de arriba a la izquierda), .width, .height
       Lo devuelven getLocalBounds() y getGlobalBounds(), y se usa para crear una sf::View.
@@ -257,7 +350,13 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
   sf::Color(rojo, verde, azul)
       Un color, cada parte de 0 a 255. Un cuarto número opcional es la transparencia (alfa):
       0 = invisible, 255 = opaco. Los colores del juego están en la paleta de CONTRIBUTING.md.
-      -> Menu.cpp
+      Cada parte se puede leer suelta con .r, .g, .b, .a: los números de daño arman un color nuevo
+      con el mismo rojo, verde y azul pero otro alfa, para irse desvaneciendo.
+      -> Menu.cpp, Personaje.cpp, Hud.cpp
+
+  sf::Uint8
+      Un entero de 0 a 255 (8 bits). Es el tipo de cada parte de un sf::Color.
+      -> Hud.cpp (dibujarNumeros)
 
   sf::VideoMode(ancho, alto)
       El tamaño con el que se crea la ventana.
