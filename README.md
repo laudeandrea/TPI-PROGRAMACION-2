@@ -160,7 +160,7 @@ Las reglas de código y de arte están en [CONTRIBUTING.md](CONTRIBUTING.md). Le
 - **Archivos nuevos:** en *Agregar → Nuevo elemento*, cambiá la ubicación a la carpeta `src\`.
   Visual Studio por defecto los crea en la raíz del proyecto.
 - **Imágenes nuevas:** van en `Imagenes/` y se cargan con ruta relativa, por ejemplo
-  `textura.loadFromFile("Imagenes/suelo.png");`.
+  `textura.loadFromFile("Imagenes/mago_64.png");`.
 - **Fuentes:** van en `Fuentes/` y se cargan igual: `fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf");`.
 - Si agregás sonido (`sf::Sound`, `sf::Music`), no hay que configurar nada: `sfml-audio` y `openal32.dll`
   ya se enlazan y se copian.

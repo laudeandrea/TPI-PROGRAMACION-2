@@ -149,18 +149,6 @@ int Mapa::getCantCasillas() const {
 	return CANT_CASILLAS;
 };
 
-void Mapa::mover() {
-
-};
-
-// Una casilla es valida si esta dentro del tablero y se puede pisar
-bool Mapa::esValida(int _fila, int _columna) const {
-	if (!estaDentro(_fila, _columna)){
-		return false;
-	}
-	return casillas[_fila][_columna].esTransitable();
-};
-
 bool Mapa::estaDentro(int _fila, int _columna) const {
 	return _fila >= 0 && _fila < CANT_CASILLAS && _columna >= 0 && _columna < CANT_CASILLAS;
 };

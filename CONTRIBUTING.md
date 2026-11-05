@@ -70,10 +70,10 @@ pero la cámara le pide el tamaño a un mapa que todavía no existe.
 
 ## Arte
 
-- **Las imágenes van en `Imagenes/`** y se cargan con ruta relativa: `"Imagenes/suelo.png"`.
+- **Las imágenes van en `Imagenes/`** y se cargan con ruta relativa: `"Imagenes/mago_64.png"`.
 - **PNG con fondo transparente.**
-- **Nombres:** las baldosas isométricas terminan en `_iso.png` (`suelo_iso.png`). Las sin `_iso` son las
-  viejas de vista de arriba: no las pisen. Lo de cada pantalla empieza con su nombre (`menu_fondo.png`).
+- **Nombres:** las baldosas isométricas terminan en `_iso.png` (`suelo_1_iso.png`). Lo de cada pantalla
+  empieza con su nombre (`menu_fondo.png`).
 - **Pixel art nítido:** escalar solo por números enteros (×2, ×3), nunca ×1.5, porque los píxeles quedan
   de distinto tamaño.
 

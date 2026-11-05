@@ -30,8 +30,6 @@ class Mapa {
 		sf::Vector2f getTamanioMundo() const;
 		/** @brief Cuantas casillas tiene cada lado del tablero (8). */
 		int getCantCasillas() const;
-		void mover();
-		bool esValida(int _fila, int _columna) const;
 		
 		/*Si la fila y la columna caen dentro del tablero. No mira el terreno. */
 		bool estaDentro(int _fila, int _columna) const;	

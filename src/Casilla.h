@@ -14,5 +14,4 @@ class Casilla {
 		Casilla(TipoTerreno t = TipoTerreno::SUELO);
 		TipoTerreno getTipoTerreno() const;
 		void setTipoTerreno(TipoTerreno _tipoTerreno);
-		bool esTransitable() const;
 };

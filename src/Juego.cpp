@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstdlib> // std::abs
-#include <iostream>
 
 // La ventana y la camara se crean en la lista de inicializacion (despues de los ":")
 // porque no tienen constructor sin parametros
