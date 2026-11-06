@@ -12,8 +12,9 @@ Juego::Juego()
 	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA), 
 	  estado(EstadoJuego::MENU),
 	  fase(FaseTurno::JUGADOR),
-	  habilidadPreparada(false),
-	  magoSeleccionado(false)
+	  habilidadPreparada(HabilidadSeleccionada::NINGUNA),
+	  magoSeleccionado(false),
+	  enemigoEmpujado(nullptr)
 {
 	enemigos.push_back(std::make_unique<Caballero>(4, 6));
 	enemigos.push_back(std::make_unique<Espectro>(1, 3));
@@ -78,6 +79,8 @@ void Juego::procesarEventos() {
 				estado = EstadoJuego::JUGANDO;
 				fase = FaseTurno::JUGADOR;
 				proyectil.reset(); // por si se salio al menu con una bola volando
+				enemigoEmpujado = nullptr; // por si se salio al menu con un empuje a medias
+				habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 			}
 			if (opcion == 2) {              // Salir
 				window.close();
@@ -87,9 +90,10 @@ void Juego::procesarEventos() {
 		else {
 			// Escape vuelve al menu (idea de Santiago)
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-				habilidadPreparada = false; // al salir al menu se cancela la habilidad
+				habilidadPreparada = HabilidadSeleccionada::NINGUNA; // al salir al menu se cancela la habilidad
 				magoSeleccionado = false;
 				estado = EstadoJuego::MENU;
+				enemigoEmpujado = nullptr; // por si se salio al menu con un empuje a medias
 			}
 
 			// Click izquierdo: si la habilidad esta preparada dispara, si no mueve al mago
@@ -99,15 +103,14 @@ void Juego::procesarEventos() {
 				sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel, camara.getVista());
 				sf::Vector2i casilla = mapa.mundoAcasilla(posicionMundo); // x = columna, y = fila
 
-				if (habilidadPreparada) {
-					// --- DISPARAR ---
-					const Habilidad& bola = mago.getHabilidad(0);
+				if (habilidadPreparada != HabilidadSeleccionada::NINGUNA) {
+					const Habilidad& habilidad = mago.getHabilidad(habilidadPreparada);
 					Enemigo* objetivo = buscarEnemigoEn(casilla.y, casilla.x);
 					int distancia = distanciaAlMago(casilla.y, casilla.x);
 
 					// gastarMana va ultimo: por el cortocircuito del &&, solo gasta si todo lo anterior se cumple
-					if (fase == FaseTurno::JUGADOR && objetivo != nullptr
-						&& distancia <= bola.getAlcance() && mago.gastarMana(bola.getCostoMana())) {
+					if (habilidadPreparada == HabilidadSeleccionada::BOLA_DE_ENERGIA && fase == FaseTurno::JUGADOR && objetivo != nullptr
+						&& distancia <= habilidad.getAlcance() && mago.gastarMana(habilidad.getCostoMana())) {
 						// La bola sale del pecho del mago y va al pecho del enemigo.
 						// El danio se aplica cuando llega (ver impactarProyectil)
 						sf::Vector2f altura(0.f, ALTURA_PECHO);
@@ -115,10 +118,58 @@ void Juego::procesarEventos() {
 						sf::Vector2f destino = mapa.casillaAmundo(casilla.y, casilla.x) - altura;
 
 						proyectil = std::make_unique<Proyectil>(origen, destino, texturaBola,
-							bola.getDanio(), casilla.y, casilla.x);
+							habilidad.getDanio(), casilla.y, casilla.x);
 
-						habilidadPreparada = false;
+						habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 						fase = FaseTurno::DISPARANDO;
+					}
+					else if (habilidadPreparada == HabilidadSeleccionada::EMPUJE
+						&& fase == FaseTurno::JUGADOR
+						&& objetivo != nullptr
+						&& distancia <= habilidad.getAlcance()) {
+
+						// Direccion del empuje: del mago hacia el enemigo
+						int pasoFila = 0, pasoColumna = 0;
+						if (objetivo->getFila() > mago.getFila()) pasoFila = 1;
+						else if (objetivo->getFila() < mago.getFila()) pasoFila = -1;
+
+						if (objetivo->getColumna() > mago.getColumna()) pasoColumna = 1;
+						else if (objetivo->getColumna() < mago.getColumna()) pasoColumna = -1;
+
+						int nuevaFila = objetivo->getFila() + pasoFila;
+						int nuevaColumna = objetivo->getColumna() + pasoColumna;
+
+						// Empuje forzado: no usa puedeMover (el enemigo no elige),
+						// pero el destino tiene que existir, estar libre y poder recibirlo.
+						bool puedeEmpujar = mapa.estaDentro(nuevaFila, nuevaColumna)
+							&& !casillaOcupada(nuevaFila, nuevaColumna);
+
+						if (puedeEmpujar) {
+							TipoTerreno terreno = mapa.getTipoTerreno(nuevaFila, nuevaColumna);
+							// El abismo se permite siempre: si no puede pisarlo, se cae
+							puedeEmpujar = objetivo->puedePisar(terreno) || terreno == TipoTerreno::ABISMO;
+						}
+
+						// gastarMana ultimo: solo gasta si el empuje se va a hacer
+						if (puedeEmpujar && mago.gastarMana(habilidad.getCostoMana())) {
+							objetivo->mover(nuevaFila, nuevaColumna);
+
+							// Si cayo al abismo y no puede estar ahi, muere
+							if (mapa.getTipoTerreno(nuevaFila, nuevaColumna) == TipoTerreno::ABISMO
+								&& !objetivo->puedePisar(TipoTerreno::ABISMO)) {
+								objetivo->recibirDanio(objetivo->getVida());
+							}
+
+							// Sacar a los que murieron (mismo criterio que impactarProyectil)
+							bool sobrevivio = objetivo->estaVivo();
+							enemigos.erase(std::remove_if(enemigos.begin(), enemigos.end(),
+								[](const std::unique_ptr<Enemigo>& e) { return !e->estaVivo(); }),
+								enemigos.end());
+
+							enemigoEmpujado = sobrevivio ? objetivo : nullptr;
+							habilidadPreparada = HabilidadSeleccionada::NINGUNA;
+							fase = FaseTurno::ENEMIGOS;
+						}
 					}
 				}
 				else {
@@ -139,11 +190,22 @@ void Juego::procesarEventos() {
 					}
 				}
 			}
+			//reemplace la anterior eleccion de Q para la habilidad por 1 y 2
+			if (event.type == sf::Event::KeyPressed && fase == FaseTurno::JUGADOR) {
+				HabilidadSeleccionada elegida = HabilidadSeleccionada::NINGUNA;
+				if (event.key.code == sf::Keyboard::Num1 || event.key.code == sf::Keyboard::Numpad1) {
+					elegida = HabilidadSeleccionada::BOLA_DE_ENERGIA;
+				}
+				if (event.key.code == sf::Keyboard::Num2 || event.key.code == sf::Keyboard::Numpad2) {
+					elegida = HabilidadSeleccionada::EMPUJE;
+				}
 
-			// Habilidad del mago (Q), si se apreta por segunda vez se cancela. Solo en el turno del jugador
-			if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q && fase == FaseTurno::JUGADOR){
-				habilidadPreparada = !habilidadPreparada;
-				magoSeleccionado = false; // o se mueve o tira la habilidad: no las dos cosas a la vez
+				if (elegida != HabilidadSeleccionada::NINGUNA) {
+					// apretar la misma tecla dos veces cancela
+					habilidadPreparada = (habilidadPreparada == elegida)
+						? HabilidadSeleccionada::NINGUNA : elegida;
+					magoSeleccionado = false;
+				}
 			}
 		}
 	}
@@ -183,7 +245,7 @@ void Juego::dibujar() {
 		if (magoSeleccionado && fase == FaseTurno::JUGADOR) {
 			dibujarMovimiento();
 		}
-		if (habilidadPreparada && fase == FaseTurno::JUGADOR) {
+		if (habilidadPreparada != HabilidadSeleccionada::NINGUNA && fase == FaseTurno::JUGADOR) {
 			dibujarAlcance();
 		}
 
@@ -231,7 +293,7 @@ void Juego::dibujar() {
 };
 
 void Juego::dibujarAlcance() {
-	int alcance = mago.getHabilidad(0).getAlcance();
+	int alcance = mago.getHabilidad(habilidadPreparada).getAlcance();
 
 	// Recorre el cuadrado alrededor del mago y se queda con las casillas a distancia 1..alcance
 	for (int fila = mago.getFila() - alcance; fila <= mago.getFila() + alcance; fila++) {
@@ -348,6 +410,7 @@ void Juego::actualizar(float dt) {
 
 	for (auto& enemigo : enemigos) {
 		if (!enemigo->estaVivo()) continue;
+		if (enemigo.get() == enemigoEmpujado) continue; // el empujado ya se movio, no hace nada mas
 
 		sf::Vector2i destino = enemigo->calcularPaso(mapa, mago);
 
@@ -356,6 +419,8 @@ void Juego::actualizar(float dt) {
 			enemigo->mover(destino.y, destino.x);
 		}
 	}
+	enemigoEmpujado = nullptr; // ya se movio, no hace nada mas
+
 	fase = FaseTurno::JUGADOR;
 	mago.recuperarMana(MANA_POR_TURNO); // empieza el turno del jugador: recupera un poco de mana
 }

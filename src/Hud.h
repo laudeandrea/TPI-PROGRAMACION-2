@@ -21,7 +21,7 @@ class Hud {
 		sf::Font fuente;
 		std::vector<NumeroDanio> numeros;
 
-		void dibujarMana(sf::RenderWindow& ventana, const Mago& mago, bool habilidadPreparada, bool magoSeleccionado) const;
+		void dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const;
 		void dibujarNumeros(sf::RenderWindow& ventana, const sf::View& vistaCamara) const;
 		/** @brief Crea un texto con la fuente y el estilo del juego. */
 		sf::Text crearTexto(const std::string& contenido, unsigned int tamanio, sf::Color color) const;
@@ -34,5 +34,5 @@ class Hud {
 		void actualizar(float dt);
 		/** @brief Dibuja todo. Cambia la vista de la ventana a la vista por defecto. */
 		void dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const Mago& mago,
-			bool habilidadPreparada, bool magoSeleccionado) const;
+			HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const;
 };

@@ -20,6 +20,7 @@ class Mago : public Personaje {
         bool gastarMana(int _cantidad);
         /** @brief Suma mana sin pasarse del maximo. */
         void recuperarMana(int _cantidad);
-        const Habilidad& getHabilidad(int _indice) const;
+        const Habilidad& getHabilidad(HabilidadSeleccionada _habilidad) const;
+		int getCantidadHabilidades() const;
 
 };

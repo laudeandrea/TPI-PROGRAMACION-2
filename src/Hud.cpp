@@ -44,17 +44,18 @@ void Hud::actualizar(float dt) {
 }
 
 void Hud::dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const Mago& mago,
-	bool habilidadPreparada, bool magoSeleccionado) const {
+	HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
 	ventana.setView(ventana.getDefaultView());
 	dibujarNumeros(ventana, vistaCamara);
 	dibujarMana(ventana, mago, habilidadPreparada, magoSeleccionado);
 }
 
-void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, bool habilidadPreparada, bool magoSeleccionado) const {
+void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
 	const float X = 32.f, Y = 612.f;                    // abajo a la izquierda: ahi no esta el tablero
 	const float ANCHO_PUNTO = 16.f, ALTO_PUNTO = 12.f, SEPARACION = 3.f;
 
-	int costo = mago.getHabilidad(0).getCostoMana();
+	bool hayHabilidadPreparada = habilidadPreparada != HabilidadSeleccionada::NINGUNA;
+	int costo = hayHabilidadPreparada ? mago.getHabilidad(habilidadPreparada).getCostoMana() : 0;
 	bool alcanza = mago.getMana() >= costo;
 
 	// Titulo
@@ -72,7 +73,7 @@ void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, bool habilida
 
 		bool lleno = i < mago.getMana();
 		// Con la habilidad preparada, los ultimos puntos llenos son los que se van a gastar
-		bool seVaAGastar = habilidadPreparada && alcanza && lleno && i >= mago.getMana() - costo;
+		bool seVaAGastar = hayHabilidadPreparada && alcanza && lleno && i >= mago.getMana() - costo;
 
 		if (seVaAGastar) {
 			punto.setFillColor(GEMA_OSCURA);
@@ -92,23 +93,34 @@ void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, bool habilida
 	numero.setPosition(xNumero, Y - 6.f);
 	ventana.draw(numero);
 
-	// Ayuda de la habilidad: cambia de color segun si esta preparada o si no alcanza el mana
-	const Habilidad& bola = mago.getHabilidad(0);
-	std::string ayuda = "[Q] " + bola.getNombre();
+	// Ayuda de la habilidad: que hay, cual esta preparada y que tecla cancela
+	std::string ayuda;
 	sf::Color colorAyuda = PIEDRA;
-	if (!alcanza) {
-		ayuda += "  - no alcanza el mana";
-		colorAyuda = TENUE;
-	}
-	else if (habilidadPreparada) {
-		ayuda = "Click en un enemigo marcado  -  Q cancela";
-		colorAyuda = GEMA;
-	}
-	// Con el mago seleccionado, la ayuda explica como moverse (va al final: reemplaza a las otras)
+
 	if (magoSeleccionado) {
 		ayuda = "Click en una casilla marcada para moverte";
-		colorAyuda = PIEDRA;
 	}
+	else if (hayHabilidadPreparada) {
+		if (!alcanza) {
+			ayuda = "No alcanza el mana";
+			colorAyuda = TENUE;
+		}
+		else {
+			ayuda = "Click en un enemigo marcado  -  ["
+				+ std::to_string(static_cast<int>(habilidadPreparada)) + "] cancela";
+			colorAyuda = GEMA;
+		}
+	}
+	else {
+		for (int i = 1; i <= mago.getCantidadHabilidades(); i++) {
+			const Habilidad& h = mago.getHabilidad(HabilidadSeleccionada(i));
+			if (i > 1) ayuda += "   |   ";
+			ayuda += "[" + std::to_string(i) + "] " + h.getNombre()
+				+ " - " + std::to_string(h.getCostoMana()) + " mana";
+		}
+	}
+
+
 	sf::Text textoAyuda = crearTexto(ayuda, 22, colorAyuda);
 	textoAyuda.setPosition(X, Y + 26.f);
 	ventana.draw(textoAyuda);

@@ -2,6 +2,14 @@
 
 #include <string>
 
+/* Cual de las habilidades del mago esta en la mano.
+ * Los valores coinciden con la tecla: 1 = bola, 2 = empuje. */
+enum class HabilidadSeleccionada {
+    NINGUNA,
+    BOLA_DE_ENERGIA,
+    EMPUJE,
+};
+
 class Habilidad {
     private:
         std::string nombre;

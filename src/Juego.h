@@ -25,6 +25,8 @@ enum class FaseTurno {
 	ENEMIGOS
 };
 
+
+
 class Juego {
 	private:
 		static const int ANCHO_VENTANA = 1280;
@@ -47,9 +49,9 @@ class Juego {
 		Menu menu;
 		EstadoJuego estado;
 		FaseTurno fase;
-		bool habilidadPreparada;
+		HabilidadSeleccionada habilidadPreparada;
 		bool magoSeleccionado; // se hizo click en el mago: se muestran las casillas a las que puede ir
-
+		Enemigo* enemigoEmpujado; // si el mago empuja a un enemigo, se guarda aca para que se mueva en el update
 		// Marcadores de casillas (movimiento y alcance de la habilidad) y la bola que vuela
 		sf::Texture texturaMovimiento, texturaAlcance, texturaObjetivo, texturaBola;
 		std::unique_ptr<Proyectil> proyectil; // nullptr cuando no hay ninguna bola volando
