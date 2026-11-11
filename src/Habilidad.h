@@ -2,13 +2,18 @@
 
 #include <string>
 
+// Que hace la habilidad. El Juego mira esto para saber si tira una bola, empuja, etc.
+enum class TipoHabilidad { BOLADEENERGIA, EMPUJE, MURO, PASO_ETEREO};
+
 class Habilidad {
     private:
+        TipoHabilidad tipo;
         std::string nombre;
         int danio, costoMana, alcance;
-       
+
     public:
-        Habilidad(std::string _nombre, int _danio, int _costoMana, int _alcance);
+        Habilidad(TipoHabilidad _tipo, std::string _nombre, int _danio, int _costoMana, int _alcance);
+        TipoHabilidad getTipo() const;
         std::string getNombre() const;
         void setNombre(std::string _nombre);
         int getDanio() const;

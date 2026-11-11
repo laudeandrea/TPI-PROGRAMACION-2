@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/graphics.hpp>
 
-/* Lo que tira una habilidad: viaja en linea recta desde el mago hasta la casilla objetivo.
+/* Una bola que viaja en linea recta hasta la casilla objetivo: la tira el mago (Q) o un espectro.
 *  Al llegar, el Juego aplica el danio (el proyectil solo se mueve y se dibuja). */
 class Proyectil {
 	private:
@@ -21,7 +21,7 @@ class Proyectil {
 		Proyectil(sf::Vector2f _origen, sf::Vector2f _destino, const sf::Texture& _textura,
 			int _danio, int _filaObjetivo, int _columnaObjetivo);
 
-		/** @brief Avanza hacia el destino. dt = segundos que pasaron desde el cuadro anterior. */
+		// Avanza hacia el destino. dt = segundos que pasaron desde el cuadro anterior.
 		void actualizar(float dt);
 		void mostrar(sf::RenderWindow& ventana) const;
 

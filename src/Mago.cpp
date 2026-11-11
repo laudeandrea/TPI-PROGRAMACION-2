@@ -3,7 +3,10 @@
 Mago::Mago(int _fila, int _columna) 
 	: Personaje(_fila, _columna, VIDA_INICIAL){
 	mana = MANA_INICIAL;
-	habilidades.push_back(Habilidad("Bola de energia", 10, 2 , 3));
+	// El orden importa: la primera se usa con la Q y la segunda con la W
+	habilidades.push_back(Habilidad(TipoHabilidad::BOLADEENERGIA, "Bola de energia", 10, 2, 3));
+	// Empuje: el enemigo tiene que estar pegado (alcance 1). Si cae al abismo, no vuelve
+	habilidades.push_back(Habilidad(TipoHabilidad::EMPUJE, "Empuje", 5, 3, 1));
 	textura.loadFromFile("Imagenes/mago_64.png");
 }
 
@@ -38,4 +41,8 @@ bool Mago::gastarMana(int _cantidad){
 
 const Habilidad& Mago::getHabilidad(int _indice) const{
 	return habilidades[_indice] ;
+}
+
+int Mago::getCantHabilidades() const{
+	return (int)habilidades.size();
 }

@@ -7,18 +7,15 @@
 // porque no tienen constructor sin parametros
 Juego::Juego()
 	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El Codice Del Mago"),
-	  mago(4,1),
-	  codice(5,0,TipoHabilidad::BOLADEENERGIA),
-	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA), 
+	  mago(FILA_MAGO, COLUMNA_MAGO),
+	  codice(FILA_CODICE, COLUMNA_CODICE, TipoHabilidad::BOLADEENERGIA),
+	  nivel(1),
+	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA),
 	  estado(EstadoJuego::MENU),
 	  fase(FaseTurno::JUGADOR),
-	  habilidadPreparada(false),
+	  habilidadPreparada(SIN_HABILIDAD),
 	  magoSeleccionado(false)
 {
-	enemigos.push_back(std::make_unique<Caballero>(4, 6));
-	enemigos.push_back(std::make_unique<Espectro>(1, 3));
-	enemigos.push_back(std::make_unique<Golem>(1, 5));
-
 	// La casilla donde se encuentra el codice (pergamino) queda ocupada, no puede ser pisada.
 	mapa.setTipoTerreno(codice.getFila(),codice.getColumna(),TipoTerreno::SUELO_OCUPADO);
 
@@ -35,14 +32,17 @@ Juego::Juego()
 	texturaFondo.loadFromFile("Imagenes/fondo_juego.png");
 	fondo.setTexture(texturaFondo);
 
-	// Habilidad: marcadores de las casillas al alcance y la bola de energia
+	// Habilidad: marcadores de las casillas al alcance y las bolas (la del mago y la de los espectros)
 	texturaMovimiento.loadFromFile("Imagenes/marcador_movimiento.png");
 	texturaAlcance.loadFromFile("Imagenes/marcador_alcance.png");
 	texturaObjetivo.loadFromFile("Imagenes/marcador_objetivo.png");
 	texturaBola.loadFromFile("Imagenes/bola_energia.png");
+	texturaBolaEspectro.loadFromFile("Imagenes/bola_espectro.png");
 
 	// Camara: encuadra el tablero y lo estira para llenar la ventana
 	camara.ajustarAVentana(window.getSize());
+
+	empezarOleada();
 };
 
 void Juego::ejecutar() {
@@ -74,52 +74,39 @@ void Juego::procesarEventos() {
 		// Lo demas depende de en que pantalla estamos
 		if (estado == EstadoJuego::MENU) {
 			int opcion = menu.procesarEvento(event, window);
-			if (opcion == 0) {              // Nueva partida
+			if (opcion == 0) {              // Nueva partida: siempre arranca de cero
+				reiniciarPartida();
 				estado = EstadoJuego::JUGANDO;
-				fase = FaseTurno::JUGADOR;
-				proyectil.reset(); // por si se salio al menu con una bola volando
 			}
 			if (opcion == 2) {              // Salir
 				window.close();
 			}
 			// opcion 1 ("Como jugar"): todavia no hay pantalla, no hace nada
 		}
+		else if (estado == EstadoJuego::GANASTE || estado == EstadoJuego::PERDISTE) {
+			// Cartel de fin de partida: Enter o Escape vuelven al menu
+			if (event.type == sf::Event::KeyPressed
+				&& (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Escape)) {
+				estado = EstadoJuego::MENU;
+			}
+		}
 		else {
 			// Escape vuelve al menu (idea de Santiago)
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-				habilidadPreparada = false; // al salir al menu se cancela la habilidad
+				habilidadPreparada = SIN_HABILIDAD; // al salir al menu se cancela la habilidad
 				magoSeleccionado = false;
 				estado = EstadoJuego::MENU;
 			}
 
-			// Click izquierdo: si la habilidad esta preparada dispara, si no mueve al mago
+			// Click izquierdo: si hay una habilidad preparada la usa, si no mueve al mago
 			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left){
 				sf::Vector2i pixel(event.mouseButton.x, event.mouseButton.y);
 				// Con la vista de la camara: la que queda puesta en la ventana es la del HUD (la ultima que se dibujo)
 				sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel, camara.getVista());
 				sf::Vector2i casilla = mapa.mundoAcasilla(posicionMundo); // x = columna, y = fila
 
-				if (habilidadPreparada) {
-					// --- DISPARAR ---
-					const Habilidad& bola = mago.getHabilidad(0);
-					Enemigo* objetivo = buscarEnemigoEn(casilla.y, casilla.x);
-					int distancia = distanciaAlMago(casilla.y, casilla.x);
-
-					// gastarMana va ultimo: por el cortocircuito del &&, solo gasta si todo lo anterior se cumple
-					if (fase == FaseTurno::JUGADOR && objetivo != nullptr
-						&& distancia <= bola.getAlcance() && mago.gastarMana(bola.getCostoMana())) {
-						// La bola sale del pecho del mago y va al pecho del enemigo.
-						// El danio se aplica cuando llega (ver impactarProyectil)
-						sf::Vector2f altura(0.f, ALTURA_PECHO);
-						sf::Vector2f origen = mapa.casillaAmundo(mago.getFila(), mago.getColumna()) - altura;
-						sf::Vector2f destino = mapa.casillaAmundo(casilla.y, casilla.x) - altura;
-
-						proyectil = std::make_unique<Proyectil>(origen, destino, texturaBola,
-							bola.getDanio(), casilla.y, casilla.x);
-
-						habilidadPreparada = false;
-						fase = FaseTurno::DISPARANDO;
-					}
+				if (habilidadPreparada != SIN_HABILIDAD) {
+					usarHabilidad(casilla.y, casilla.x);
 				}
 				else {
 					// --- MOVER ---
@@ -132,7 +119,7 @@ void Juego::procesarEventos() {
 						else if (magoSeleccionado) {
 							if (magoPuedeIrA(casilla.y, casilla.x)) {
 								mago.mover(casilla.y, casilla.x);
-								fase = FaseTurno::ENEMIGOS;
+								terminarTurnoJugador();
 							}
 							magoSeleccionado = false;
 						}
@@ -140,22 +127,38 @@ void Juego::procesarEventos() {
 				}
 			}
 
-			// Habilidad del mago (Q), si se apreta por segunda vez se cancela. Solo en el turno del jugador
-			if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q && fase == FaseTurno::JUGADOR){
-				habilidadPreparada = !habilidadPreparada;
-				magoSeleccionado = false; // o se mueve o tira la habilidad: no las dos cosas a la vez
+			// Habilidades del mago: Q la primera, W la segunda. Si se apreta la misma otra vez, se cancela.
+			// Solo en el turno del jugador
+			if (event.type == sf::Event::KeyPressed && fase == FaseTurno::JUGADOR) {
+				int indice = SIN_HABILIDAD;
+				if (event.key.code == sf::Keyboard::Q) indice = 0;
+				if (event.key.code == sf::Keyboard::W) indice = 1;
+
+				if (indice != SIN_HABILIDAD) {
+					if (habilidadPreparada == indice) {
+						habilidadPreparada = SIN_HABILIDAD;
+					}
+					else {
+						habilidadPreparada = indice;
+					}
+					magoSeleccionado = false; // o se mueve o tira la habilidad: no las dos cosas a la vez
+				}
+
+				// Espacio: pasa el turno sin hacer nada. Si el mago queda rodeado y sin mana, es la unica salida
+				if (event.key.code == sf::Keyboard::Space) {
+					habilidadPreparada = SIN_HABILIDAD;
+					magoSeleccionado = false;
+					terminarTurnoJugador();
+				}
 			}
 		}
 	}
-	
+
 };
 
 bool Juego::casillaOcupada(int fila, int columna) const {
 	if (mago.estaEn(fila, columna)) return true;
-	for (const auto& enemigo : enemigos) {
-		if (enemigo->estaEn(fila, columna)) return true;
-	}
-	return false;
+	return buscarEnemigoEn(fila, columna) != nullptr;
 };
 
 bool Juego::puedeMover(const Personaje& quien, int fila, int columna) const {
@@ -174,7 +177,7 @@ void Juego::dibujar() {
 	if(estado == EstadoJuego::MENU){
 		menu.dibujar(window);
 	}else{
-		window.setView(window.getDefaultView()); // vista de la ventana: 1280x720 
+		window.setView(window.getDefaultView()); // vista de la ventana: 1280x720
 		window.draw(fondo);
 		camara.aplicar(window);
 		mapa.mostrar(window);
@@ -183,9 +186,10 @@ void Juego::dibujar() {
 		if (magoSeleccionado && fase == FaseTurno::JUGADOR) {
 			dibujarMovimiento();
 		}
-		if (habilidadPreparada && fase == FaseTurno::JUGADOR) {
+		if (habilidadPreparada != SIN_HABILIDAD && fase == FaseTurno::JUGADOR) {
 			dibujarAlcance();
 		}
+		dibujarExplosiones();
 
 		/* personajes ordenados por profundidad, lo de adelante se dibuja ultimo */
 		std::vector<Personaje*> personajes;
@@ -214,24 +218,38 @@ void Juego::dibujar() {
 		}
 
 		// Barras de vida: despues de todos los personajes, asi ningun otro las tapa
+		mago.mostrarBarraVida(window, mapa);
 		for (const auto& enemigo : enemigos) {
 			enemigo->mostrarBarraVida(window, mapa);
 		}
 
-		// La bola vuela por encima de todo
-		if (proyectil != nullptr) {
+		// Las bolas vuelan por encima de todo
+		for (const auto& proyectil : proyectiles) {
 			proyectil->mostrar(window);
 		}
 
 		// HUD: fijo en la pantalla (cambia a la vista por defecto)
-		hud.dibujar(window, camara.getVista(), mago, habilidadPreparada, magoSeleccionado);
+		hud.dibujar(window, camara.getVista(), mago, codice, nivel, habilidadPreparada, magoSeleccionado);
+
+		// Cartel de fin de partida: arriba de todo, con el tablero oscurecido atras
+		if (estado == EstadoJuego::GANASTE) {
+			hud.dibujarFinDePartida(window, true, "Sobreviviste a todas las oleadas");
+		}
+		if (estado == EstadoJuego::PERDISTE) {
+			// Sin tildes: SFML no las muestra bien sin convertir el texto
+			std::string motivo = "Destruyeron el codice";
+			if (!mago.estaVivo()) {
+				motivo = "El mago cayo en combate";
+			}
+			hud.dibujarFinDePartida(window, false, motivo);
+		}
 	}
 
 	window.display();
 };
 
 void Juego::dibujarAlcance() {
-	int alcance = mago.getHabilidad(0).getAlcance();
+	int alcance = mago.getHabilidad(habilidadPreparada).getAlcance();
 
 	// Recorre el cuadrado alrededor del mago y se queda con las casillas a distancia 1..alcance
 	for (int fila = mago.getFila() - alcance; fila <= mago.getFila() + alcance; fila++) {
@@ -264,6 +282,18 @@ void Juego::dibujarMarcador(const sf::Texture& textura, int fila, int columna) {
 	marcador.setOrigin(32.f, 20.f);
 	marcador.setPosition(mapa.casillaAmundo(fila, columna));
 	window.draw(marcador);
+}
+
+void Juego::dibujarExplosiones() {
+	for (const Explosion& explosion : explosiones) {
+		// El mismo rombo rojo de los objetivos, que se va desvaneciendo (alpha: 255 = opaco, 0 = invisible)
+		float opacidad = 1.f - explosion.tiempo / DURACION_EXPLOSION;
+		sf::Sprite marcador(texturaObjetivo);
+		marcador.setColor(sf::Color(255, 255, 255, (sf::Uint8)(255 * opacidad)));
+		marcador.setOrigin(32.f, 20.f);
+		marcador.setPosition(mapa.casillaAmundo(explosion.fila, explosion.columna));
+		window.draw(marcador);
+	}
 }
 
 // Busqueda "en anchura" (BFS): primero todas las casillas a 1 paso, despues las de 2, y asi.
@@ -314,59 +344,315 @@ bool Juego::magoPuedeIrA(int fila, int columna) const {
 	return false;
 }
 
-void Juego::impactarProyectil() {
-	Enemigo* objetivo = buscarEnemigoEn(proyectil->getFilaObjetivo(), proyectil->getColumnaObjetivo());
-	if (objetivo != nullptr) {
-		objetivo->recibirDanio(proyectil->getDanio());
-		// El numero aparece arriba de la cabeza: los sprites miden 64 de alto
-		sf::Vector2f cabeza = mapa.casillaAmundo(objetivo->getFila(), objetivo->getColumna()) - sf::Vector2f(0.f, 72.f);
-		hud.agregarDanio(cabeza, proyectil->getDanio());
+// La misma busqueda en anchura que casillasAlcanzables, pero sin limite de pasos y anotando
+// desde que casilla se llego a cada una. Asi, al encontrar el destino, se puede volver para atras hasta el primer paso.
+sf::Vector2i Juego::pasoHacia(const Enemigo& enemigo, int filaObjetivo, int columnaObjetivo) const {
+	int n = mapa.getCantCasillas();
+	sf::Vector2i inicio(enemigo.getColumna(), enemigo.getFila()); // x = columna, y = fila
+
+	// desde[fila][columna] = la casilla de la que se vino; (-1, -1) = todavia no se llego
+	std::vector<std::vector<sf::Vector2i>> desde(n, std::vector<sf::Vector2i>(n, sf::Vector2i(-1, -1)));
+	desde[inicio.y][inicio.x] = inicio;
+
+	std::vector<sf::Vector2i> encontradas;
+	encontradas.push_back(inicio);
+
+	const sf::Vector2i direcciones[4] = { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+
+	for (size_t i = 0; i < encontradas.size(); i++) {
+		sf::Vector2i actual = encontradas[i];
+
+		// Desde aca le llega el ataque: es la casilla buena mas cercana (la BFS las encuentra en orden de distancia)
+		int distanciaAlObjetivo = distancia(actual.y, actual.x, filaObjetivo, columnaObjetivo);
+		if (distanciaAlObjetivo >= 1 && distanciaAlObjetivo <= enemigo.getAlcanceAtaque()) {
+			// Vuelve para atras por el camino hasta la casilla que esta pegada al inicio: ese es el paso
+			while (desde[actual.y][actual.x] != inicio && actual != inicio) {
+				actual = desde[actual.y][actual.x];
+			}
+			return actual;
+		}
+
+		for (const sf::Vector2i& direccion : direcciones) {
+			sf::Vector2i vecina = actual + direccion;
+			if (!puedeMover(enemigo, vecina.y, vecina.x)) continue;
+			if (desde[vecina.y][vecina.x].x != -1) continue; // ya la habiamos encontrado
+
+			desde[vecina.y][vecina.x] = actual;
+			encontradas.push_back(vecina);
+		}
 	}
 
-	// Saca del vector a los enemigos que quedaron sin vida
-	enemigos.erase(std::remove_if(enemigos.begin(), enemigos.end(),
-		[](const std::unique_ptr<Enemigo>& e) { return !e->estaVivo(); }), enemigos.end());
-
-	proyectil.reset(); // borra la bola (el unique_ptr queda en nullptr)
-	fase = FaseTurno::ENEMIGOS;
+	// No hay ningun camino libre (lo tapan otros personajes): se acerca en linea recta, como antes
+	return enemigo.calcularPaso(mapa, filaObjetivo, columnaObjetivo);
 }
 
 void Juego::actualizar(float dt) {
 	hud.actualizar(dt); // los numeros de danio se animan siempre
 
+	// Las casillas rojas de los golpes tambien se animan siempre, y se borran cuando terminan
+	for (Explosion& explosion : explosiones) {
+		explosion.tiempo += dt;
+	}
+	explosiones.erase(std::remove_if(explosiones.begin(), explosiones.end(),
+		[](const Explosion& e) { return e.tiempo >= DURACION_EXPLOSION; }), explosiones.end());
+
 	if (estado != EstadoJuego::JUGANDO) return;
 
-	if (fase == FaseTurno::DISPARANDO) {
-		proyectil->actualizar(dt);
-		if (proyectil->yaLlego()) {
-			impactarProyectil();
+	// Mientras vuelan bolas, nadie hace nada mas. Cuando llegan todas, sigue el turno que corresponde
+	if (fase == FaseTurno::DISPARANDO || fase == FaseTurno::ENEMIGOS_DISPARANDO) {
+		moverProyectiles(dt);
+		if (proyectiles.empty()) {
+			if (fase == FaseTurno::DISPARANDO) {
+				terminarTurnoJugador();   // era la bola del mago
+			}
+			else {
+				empezarTurnoJugador();    // eran las de los espectros
+			}
 		}
-		return; // mientras vuela, los enemigos esperan
+		return;
 	}
 
-	if (fase != FaseTurno::ENEMIGOS) return;
+	if (fase == FaseTurno::ENEMIGOS) {
+		turnoEnemigos();
+	}
+}
 
-	for (auto& enemigo : enemigos) {
-		if (!enemigo->estaVivo()) continue;
+// ---------------------------------------------------------------- Partida
 
-		sf::Vector2i destino = enemigo->calcularPaso(mapa, mago);
+void Juego::reiniciarPartida() {
+	// Se crean de nuevo y se copian encima de los viejos (asi vuelven con la vida y el mana llenos)
+	mago = Mago(FILA_MAGO, COLUMNA_MAGO);
+	codice = Pergamino(FILA_CODICE, COLUMNA_CODICE, TipoHabilidad::BOLADEENERGIA);
+	nivel = Nivel(1);
 
-		bool quiereMoverse = !enemigo->estaEn(destino.y, destino.x);
-		if (quiereMoverse && puedeMover(*enemigo, destino.y, destino.x)) {
-			enemigo->mover(destino.y, destino.x);
+	enemigos.clear();
+	proyectiles.clear();
+	explosiones.clear();
+	hud.limpiar();
+
+	fase = FaseTurno::JUGADOR;
+	habilidadPreparada = SIN_HABILIDAD;
+	magoSeleccionado = false;
+
+	empezarOleada();
+}
+
+void Juego::empezarOleada() {
+	for (auto& enemigo : nivel.crearOleada()) {
+		// Si su casilla de salida esta ocupada (por ejemplo, el mago esta parado ahi),
+		// lo pone en la casilla libre mas cercana. casillasAlcanzables las devuelve de la mas cercana a la mas lejana
+		if (casillaOcupada(enemigo->getFila(), enemigo->getColumna())) {
+			std::vector<sf::Vector2i> libres = casillasAlcanzables(*enemigo, 3);
+			if (libres.empty()) continue; // no hay lugar: esta oleada viene con uno menos
+			enemigo->mover(libres[0].y, libres[0].x);
+		}
+		// std::move: un unique_ptr no se puede copiar, se "pasa" al vector (y el de aca queda vacio)
+		enemigos.push_back(std::move(enemigo));
+	}
+}
+
+void Juego::revisarFinDePartida() {
+	if (!mago.estaVivo() || codice.estaDestruido()) {
+		estado = EstadoJuego::PERDISTE;
+		habilidadPreparada = SIN_HABILIDAD;
+		magoSeleccionado = false;
+		return;
+	}
+
+	if (enemigos.empty()) {
+		if (nivel.hayOtraOleada()) {
+			nivel.pasarDeOleada();
+			empezarOleada();
+		}
+		else {
+			estado = EstadoJuego::GANASTE;
 		}
 	}
+}
+
+// ---------------------------------------------------------------- Turno del jugador
+
+void Juego::usarHabilidad(int fila, int columna) {
+	const Habilidad& habilidad = mago.getHabilidad(habilidadPreparada);
+	Enemigo* objetivo = buscarEnemigoEn(fila, columna);
+	int distancia = distanciaAlMago(fila, columna);
+
+	// gastarMana va ultimo: por el cortocircuito del &&, solo gasta si todo lo anterior se cumple
+	if (fase != FaseTurno::JUGADOR || objetivo == nullptr
+		|| distancia > habilidad.getAlcance() || !mago.gastarMana(habilidad.getCostoMana())) {
+		return;
+	}
+
+	if (habilidad.getTipo() == TipoHabilidad::BOLADEENERGIA) {
+		// La bola sale del pecho del mago y va al pecho del enemigo.
+		// El danio se aplica cuando llega (ver moverProyectiles)
+		sf::Vector2f altura(0.f, ALTURA_PECHO);
+		sf::Vector2f origen = mapa.casillaAmundo(mago.getFila(), mago.getColumna()) - altura;
+		sf::Vector2f destino = mapa.casillaAmundo(fila, columna) - altura;
+
+		proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBola,
+			habilidad.getDanio(), fila, columna));
+		fase = FaseTurno::DISPARANDO;
+	}
+	else if (habilidad.getTipo() == TipoHabilidad::EMPUJE) {
+		empujar(*objetivo, habilidad.getDanio());
+		terminarTurnoJugador(); // el empuje es instantaneo: no hay nada que esperar
+	}
+
+	habilidadPreparada = SIN_HABILIDAD;
+}
+
+void Juego::empujar(Enemigo& enemigo, int danio) {
+	// Para que lado: desde el mago hacia el enemigo. Como estan pegados, es un paso en fila o en columna
+	int filaDestino = enemigo.getFila() + (enemigo.getFila() - mago.getFila());
+	int columnaDestino = enemigo.getColumna() + (enemigo.getColumna() - mago.getColumna());
+
+	daniarCasilla(enemigo.getFila(), enemigo.getColumna(), danio);
+	if (!enemigo.estaVivo()) return; // el golpe ya lo mato
+
+	// Contra el borde o contra otro personaje no se mueve
+	if (!mapa.estaDentro(filaDestino, columnaDestino) || casillaOcupada(filaDestino, columnaDestino)) {
+		return;
+	}
+
+	TipoTerreno terreno = mapa.getTipoTerreno(filaDestino, columnaDestino);
+	if (enemigo.puedePisar(terreno)) {
+		enemigo.mover(filaDestino, columnaDestino); // virtual: el espectro flota sobre el abismo y no se cae
+	}
+	else if (terreno == TipoTerreno::ABISMO) {
+		// No puede volar: cae al pozo y no vuelve. Se le saca toda la vida que le quedaba
+		enemigo.mover(filaDestino, columnaDestino);
+		daniarCasilla(filaDestino, columnaDestino, enemigo.getVida());
+	}
+	// Contra una columna rota (o el codice) choca y se queda donde esta
+}
+
+void Juego::terminarTurnoJugador() {
+	sacarMuertos();
+	fase = FaseTurno::ENEMIGOS;
+	revisarFinDePartida(); // si se mato al ultimo, aparece la proxima oleada (o se gana)
+}
+
+// ---------------------------------------------------------------- Turno de los enemigos
+
+void Juego::turnoEnemigos() {
+	// Con indice y no con "for (auto& ...)": asi queda claro que no se borra nada mientras se recorre.
+	// Los que mueren en este turno (por la explosion de un golem) se sacan todos juntos al final
+	for (size_t i = 0; i < enemigos.size(); i++) {
+		Enemigo& enemigo = *enemigos[i];
+		if (!enemigo.estaVivo()) continue;
+
+		// Va por lo que tenga mas cerca: el mago o el codice. Si estan igual de lejos, prefiere el codice
+		int distanciaMago = distancia(enemigo.getFila(), enemigo.getColumna(), mago.getFila(), mago.getColumna());
+		int distanciaCodice = distancia(enemigo.getFila(), enemigo.getColumna(), codice.getFila(), codice.getColumna());
+		int filaObjetivo = codice.getFila(), columnaObjetivo = codice.getColumna();
+		if (distanciaMago < distanciaCodice) {
+			filaObjetivo = mago.getFila();
+			columnaObjetivo = mago.getColumna();
+		}
+
+		// Cada enemigo hace UNA cosa por turno: si le llega ataca, si no camina.
+		// (Si camina y queda pegado, recien ataca el turno siguiente: el jugador tiene tiempo de reaccionar)
+		if (enemigo.puedeAtacar(filaObjetivo, columnaObjetivo)) {
+			// virtual: se ejecuta el atacar del enemigo que sea de verdad (el del golem explota)
+			Ataque ataque = enemigo.atacar(filaObjetivo, columnaObjetivo);
+
+			for (const sf::Vector2i& casilla : ataque.casillas) {
+				if (enemigo.lanzaProyectil()) {
+					// Sale de su pecho y va al pecho del objetivo; el danio se aplica cuando llega
+					sf::Vector2f altura(0.f, ALTURA_PECHO);
+					sf::Vector2f origen = mapa.casillaAmundo(enemigo.getFila(), enemigo.getColumna()) - altura;
+					sf::Vector2f destino = mapa.casillaAmundo(casilla.y, casilla.x) - altura;
+					proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBolaEspectro,
+						ataque.danio, casilla.y, casilla.x));
+				}
+				else if (mapa.estaDentro(casilla.y, casilla.x)) {
+					daniarCasilla(casilla.y, casilla.x, ataque.danio);
+					explosiones.push_back({ casilla.y, casilla.x, 0.f }); // la casilla se marca en rojo un momento
+				}
+			}
+		}
+		else {
+			sf::Vector2i destino = pasoHacia(enemigo, filaObjetivo, columnaObjetivo);
+
+			bool quiereMoverse = !enemigo.estaEn(destino.y, destino.x);
+			if (quiereMoverse && puedeMover(enemigo, destino.y, destino.x)) {
+				enemigo.mover(destino.y, destino.x);
+			}
+		}
+	}
+
+	sacarMuertos();
+
+	if (proyectiles.empty()) {
+		empezarTurnoJugador();
+	}
+	else {
+		fase = FaseTurno::ENEMIGOS_DISPARANDO; // hay que esperar a que lleguen las bolas de los espectros
+	}
+}
+
+void Juego::empezarTurnoJugador() {
 	fase = FaseTurno::JUGADOR;
 	mago.recuperarMana(MANA_POR_TURNO); // empieza el turno del jugador: recupera un poco de mana
+	revisarFinDePartida();
+}
+
+// ---------------------------------------------------------------- Danio
+
+void Juego::daniarCasilla(int fila, int columna, int danio) {
+	if (!mapa.estaDentro(fila, columna)) return;
+
+	// El numero aparece arriba de la cabeza: los sprites miden 64 de alto
+	sf::Vector2f posicion = mapa.casillaAmundo(fila, columna);
+
+	if (mago.estaEn(fila, columna)) {
+		mago.recibirDanio(danio);
+		hud.agregarDanio(posicion - sf::Vector2f(0.f, ALTURA_CABEZA), danio);
+	}
+
+	if (codice.getFila() == fila && codice.getColumna() == columna) {
+		codice.recibirDanio(danio);
+		hud.agregarDanio(posicion - sf::Vector2f(0.f, ALTURA_CODICE), danio);
+	}
+
+	Enemigo* enemigo = buscarEnemigoEn(fila, columna);
+	if (enemigo != nullptr) {
+		enemigo->recibirDanio(danio);
+		hud.agregarDanio(posicion - sf::Vector2f(0.f, ALTURA_CABEZA), danio);
+	}
+}
+
+void Juego::moverProyectiles(float dt) {
+	for (auto& proyectil : proyectiles) {
+		proyectil->actualizar(dt);
+		if (proyectil->yaLlego()) {
+			daniarCasilla(proyectil->getFilaObjetivo(), proyectil->getColumnaObjetivo(), proyectil->getDanio());
+		}
+	}
+
+	// Borra las que ya llegaron (mismo truco que con los enemigos muertos)
+	proyectiles.erase(std::remove_if(proyectiles.begin(), proyectiles.end(),
+		[](const std::unique_ptr<Proyectil>& p) { return p->yaLlego(); }), proyectiles.end());
+}
+
+void Juego::sacarMuertos() {
+	enemigos.erase(std::remove_if(enemigos.begin(), enemigos.end(),
+		[](const std::unique_ptr<Enemigo>& e) { return !e->estaVivo(); }), enemigos.end());
+}
+
+int Juego::distancia(int fila1, int columna1, int fila2, int columna2) const {
+	return std::abs(fila1 - fila2) + std::abs(columna1 - columna2);
 }
 
 int Juego::distanciaAlMago(int fila, int columna) const {
-	return std::abs(mago.getFila() - fila) + std::abs(mago.getColumna() - columna);
+	return distancia(fila, columna, mago.getFila(), mago.getColumna());
 }
 
 Enemigo* Juego::buscarEnemigoEn(int fila, int columna) const{
 	for (const auto& enemigo : enemigos) {
-			if (enemigo->estaEn(fila,columna)) {
+			// Los muertos todavia pueden estar en el vector hasta que se saquen: esos no cuentan
+			if (enemigo->estaVivo() && enemigo->estaEn(fila,columna)) {
 					return enemigo.get(); // devuelve el puntero a ESE enemigo
 			}
 	}

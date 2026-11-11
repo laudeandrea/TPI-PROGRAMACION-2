@@ -44,8 +44,9 @@ Para entender cómo está armado el código, primero leé la sección "Cómo fun
 - **Métodos que no modifican el objeto llevan `const`** al final, en el `.h` y en el `.cpp`.
   Ejemplo: `sf::Vector2f getTamanioMundo() const;`.
 - **Constantes de clase:** `static const int` para enteros, `static constexpr float` para decimales.
-- **Comentarios:** que expliquen el *por qué*, no lo que ya se lee en el código. Los métodos públicos
-  importantes se documentan en el `.h` con formato Doxygen (`/** @brief ... */`).
+- **Comentarios:** que expliquen el *por qué*, no lo que ya se lee en el código. Los métodos importantes
+  se documentan en el `.h` con un comentario normal (`//`) justo arriba de la declaración. No usamos
+  formato Doxygen (`/** @brief ... */`).
 
 ## Posiciones y dibujo
 
@@ -214,31 +215,44 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
   (ignorada por git); se revisan y después se copian a `Imagenes/`. No retoques los PNG a mano: la próxima
   vez que alguien corra el script se pierde el retoque.
 
-### Habilidades y HUD
+### Habilidades, ataques y HUD
 
 | Archivo | Lienzo | Qué es | Origen |
 |---|---|---|---|
 | `marcador_movimiento.png` | 64×40 | Rombo **Piedra** transparente: casilla a la que el mago puede caminar (después de clickearlo). | `(32, 20)` |
 | `marcador_alcance.png` | 64×40 | Rombo **Gema** transparente: casilla a la que llega la habilidad. | Centro del rombo, `(32, 20)` |
-| `marcador_objetivo.png` | 64×40 | Igual, en rojo (**Peligro**): hay un enemigo al alcance. | `(32, 20)` |
+| `marcador_objetivo.png` | 64×40 | Igual, en rojo (**Peligro**): hay un enemigo al alcance. También marca, desvaneciéndose en 0,5 s, las casillas que recibieron un golpe o la explosión del golem. | `(32, 20)` |
 | `bola_energia.png` | 32×16 | Bola de energía: **2 cuadros de 16×16** uno al lado del otro, se alternan cada 0,1 s. | Centro del cuadro, `(8, 8)` |
+| `bola_espectro.png` | 32×16 | Bola de ectoplasma del espectro: mismo formato que la bola de energía, en los colores del **Vacío**, con dos ojitos oscuros y jirones rojizos para que no se confunda con la del mago. | `(8, 8)` |
 
 - **Marcadores:** son 1 px más chicos que el rombo de la baldosa, para que la junta oscura se siga viendo,
   y el relleno es tramado y casi transparente, para que se vea el piso. Se dibujan después del mapa y antes
   que los personajes. En el abismo solo se marca si hay un enemigo (el espectro vuela).
 - **La bola** sale del pecho del mago y pega en el pecho del enemigo: **30 px arriba de los pies**
   (`ALTURA_PECHO` en `Juego.h`).
-- **Barra de vida de los enemigos:** 32×4 px (del mundo), 6 px arriba de la imagen del personaje.
-  Vacía en **Pizarra**, llena en **Peligro**, con un borde de 1 px color **Fondo**.
-- **HUD de maná** (fijo en la pantalla, abajo a la izquierda, en (32, 612)): título "Mana" en **Piedra**,
-  un rectángulo de 16×12 por cada punto (lleno en **Gema**, vacío en **Pizarra**; con la Q apretada, los
-  puntos que se van a gastar en **Gema oscura**) y el número "8/10" en **Gema**. Abajo, la ayuda de la
-  habilidad: **Piedra** normal, **Gema** con la Q apretada, **Tenue** si no alcanza el maná.
+- **Barra de vida arriba de la cabeza** (enemigos y mago): 32×4 px (del mundo), 6 px arriba de la imagen
+  del personaje. Vacía en **Pizarra**, llena en **Peligro**, con un borde de 1 px color **Fondo**.
+- **HUD de abajo a la izquierda** (fijo en la pantalla, x = 32): cuatro filas.
+  - **Vida** (y = 548) y **Codice** (y = 580): título en **Piedra**, barra de 187×12 que empieza en x = 120
+    (vacía en **Pizarra**, llena en **Peligro**, borde **Fondo** de 2 px) y el número "80/100" en rojo claro.
+  - **Mana** (y = 612): mismo título y misma x de la barra, un rectángulo de 16×12 por cada punto (lleno en
+    **Gema**, vacío en **Pizarra**; con una habilidad preparada, los puntos que se van a gastar en
+    **Gema oscura**) y el número "8/10" en **Gema**. Las tres barras miden lo mismo, así quedan alineadas.
+  - **Ayuda** (y = 638): las habilidades una al lado de la otra, "[Q] Bola de energia (2)", en **Piedra** (o
+    **Tenue** si no alcanza el maná), y al final "[Espacio] Pasar turno" en **Tenue**. Con una habilidad
+    preparada o el mago seleccionado, se reemplaza por la instrucción de qué hacer (en **Gema** / **Piedra**).
+- **Oleada:** "Oleada 1/3" en **Piedra**, arriba a la izquierda, en (32, 24).
+- **Cartel de fin de partida:** la pantalla entera se tapa con **Fondo** al 75 % de opacidad (alfa 190), y en
+  el medio va un panel de 480×200 en (400, 260), relleno **Fondo** con borde **Pizarra** de 2 px. Adentro,
+  centradas en x = 640: el título "VICTORIA" (**Gema**) o "DERROTA" (rojo claro) en y = 310, agrandado ×2 con
+  `setScale` (no con tamaño 44, para que siga nítido); el motivo en **Piedra** en y = 370; y "Enter para volver
+  al menu" en **Tenue** en y = 420.
 - **Números de daño:** "-10" en rojo claro (`#E8786E`), fuente 22 con borde **Fondo** de 2 px. Aparecen
   arriba de la cabeza, suben 22 px en 0,9 s y en la segunda mitad se desvanecen.
 - **Todo el texto del HUD es tamaño 22** y lleva un borde oscuro de 2 px, para leerse sobre cualquier cosa.
-- **Cómo se generan:** [herramientas/generar_arte_habilidad.py](herramientas/generar_arte_habilidad.py),
-  igual que el arte del mapa: `python herramientas/generar_arte_habilidad.py`.
+- **Cómo se generan:** [herramientas/generar_arte_habilidad.py](herramientas/generar_arte_habilidad.py)
+  (marcadores y bola de energía) y [herramientas/generar_arte_enemigos.py](herramientas/generar_arte_enemigos.py)
+  (bola del espectro), igual que el arte del mapa: `python herramientas/generar_arte_enemigos.py`.
 
 ## Git
 

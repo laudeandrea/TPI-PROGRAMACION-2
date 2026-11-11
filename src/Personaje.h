@@ -12,7 +12,7 @@ class Personaje {
 		virtual ~Personaje() = default; // virtual: si se borra por Personaje* se destruye la hija tambien
 
 		void mostrar(sf::RenderWindow& ventana, const Mapa& mapa) const; // Se dibuja
-		/** @brief Dibuja la barra de vida arriba de la cabeza. Hay que llamarla con la vista de la camara puesta. */
+		// Dibuja la barra de vida arriba de la cabeza. Hay que llamarla con la vista de la camara puesta.
 		void mostrarBarraVida(sf::RenderWindow& ventana, const Mapa& mapa) const;
 		void mover (int _fila, int _columna); //Cambia de casilla
 
@@ -23,8 +23,8 @@ class Personaje {
 		bool estaVivo() const;
 		bool estaEn(int _fila, int _columna) const;
 
-		/** @brief Indica si este personaje puede pisar ese tipo de terreno.
-		 *  Por defecto solo el suelo: las hijas lo redefinen (ej: el espectro atraviesa el abismo). */
+		// Indica si este personaje puede pisar ese tipo de terreno.
+		// Por defecto solo el suelo: las hijas lo redefinen (ej: el espectro atraviesa el abismo).
 		virtual bool puedePisar(TipoTerreno terreno) const;
 
 		virtual void recibirDanio(int cantidad);

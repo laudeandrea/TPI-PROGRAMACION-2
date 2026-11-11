@@ -9,3 +9,11 @@ bool Espectro::puedePisar(TipoTerreno terreno) const {
 		|| terreno == TipoTerreno::COLUMNAROTA
 		|| terreno == TipoTerreno::ABISMO;
 };
+
+int Espectro::getAlcanceAtaque() const {
+	return ALCANCE_ATAQUE;
+};
+
+bool Espectro::lanzaProyectil() const {
+	return true;
+};

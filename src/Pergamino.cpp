@@ -13,6 +13,10 @@ int Pergamino::getFila() const{ return fila; };
     
 int Pergamino::getColumna() const{ return columna; };
 
+int Pergamino::getVida() const{ return vidaActual; };
+
+int Pergamino::getVidaMaxima() const{ return VIDA_MAXIMA; };
+
 void Pergamino::recibirDanio(int cantidadDanio){
     vidaActual -= cantidadDanio;
     if(vidaActual < 0){

@@ -16,13 +16,13 @@ bool Enemigo::puedeIrA(const Mapa& mapa, int fila, int columna) const {
 	return puedePisar(mapa.getTipoTerreno(fila, columna));
 };
 
-sf::Vector2i Enemigo::calcularPaso(const Mapa& mapa, const Personaje& objetivo) const {
-	int dFila = objetivo.getFila() - getFila();
-	int dColumna = objetivo.getColumna() - getColumna();
+sf::Vector2i Enemigo::calcularPaso(const Mapa& mapa, int filaObjetivo, int columnaObjetivo) const {
+	int dFila = filaObjetivo - getFila();
+	int dColumna = columnaObjetivo - getColumna();
 
 	sf::Vector2i actual(columna, fila);   // (x = columna, y = fila)
 
-	if (std::abs(dFila) + std::abs(dColumna) <= 1) return actual; // ya está al lado, no se mueve
+	if (puedeAtacar(filaObjetivo, columnaObjetivo)) return actual; // ya le llega, no se mueve
 
 	int pasoFila = 0, pasoColumna = 0;
 	if (dFila > 0) {
@@ -62,8 +62,22 @@ sf::Vector2i Enemigo::calcularPaso(const Mapa& mapa, const Personaje& objetivo) 
 	return actual;
 }
 
+int Enemigo::getAlcanceAtaque() const {
+	return 1;
+}
 
+bool Enemigo::puedeAtacar(int filaObjetivo, int columnaObjetivo) const{
+	int distancia = std::abs(filaObjetivo - fila) + std::abs(columnaObjetivo - columna);
+	return distancia >= 1 && distancia <= getAlcanceAtaque(); // virtual: cada enemigo dice su alcance
+}
 
+Ataque Enemigo::atacar(int filaObjetivo, int columnaObjetivo){
+	Ataque ataque;
+	ataque.casillas.push_back(sf::Vector2i(columnaObjetivo, filaObjetivo));
+	ataque.danio = danio;
+	return ataque;
+}
 
-
-
+bool Enemigo::lanzaProyectil() const {
+	return false;
+}

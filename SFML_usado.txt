@@ -6,7 +6,7 @@ Todo lo de SFML empieza con "sf::". Versión: SFML 2.6.2.
 
 Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no está acá, falta agregarlo.
 
-Última actualización: 04/11/2026
+Última actualización: 11/11/2026
 
 ----------------------------------------------------------------------------------------------------
 1. LA VENTANA: sf::RenderWindow
@@ -134,6 +134,9 @@ Se leen con window.pollEvent(event).
         sf::Keyboard::Enter       -> Enter
         sf::Keyboard::Escape      -> Escape (en el tablero, vuelve al menú)
         sf::Keyboard::Q           -> Q (en el tablero, prepara o cancela la bola de energía)
+        sf::Keyboard::W           -> W (en el tablero, prepara o cancela el empuje)
+        sf::Keyboard::Space       -> barra espaciadora (en el tablero, pasa el turno)
+        sf::Keyboard::Enter       -> también cierra el cartel de victoria o derrota
       -> Menu.cpp (procesarEvento), Juego.cpp (procesarEventos)
 
   const sf::Event& evento (como parámetro)
@@ -160,7 +163,7 @@ Hay tres cosas distintas y es fácil confundirlas:
   textura.loadFromFile("Imagenes/archivo.png")
       Carga la imagen desde el disco. Devuelve false si no la encuentra.
       La ruta es relativa a la carpeta del .exe.
-      -> Juego.cpp (sf::Image del ícono, sf::Texture del fondo), Mapa.cpp, Mago.cpp, Caballero.cpp,
+      -> Juego.cpp (sf::Image del ícono, sf::Texture del fondo, los marcadores y las bolas), Mapa.cpp, Mago.cpp, Caballero.cpp,
          Espectro.cpp, Golem.cpp, Pergamino.cpp, Menu.cpp (sf::Texture)
 
       Las texturas también se pueden cargar en un for armando el nombre del archivo:
@@ -196,6 +199,12 @@ Hay tres cosas distintas y es fácil confundirlas:
       tiene 2 cuadros de 16x16 uno al lado del otro, y según el tiempo se muestra el de x = 0 o el
       de x = 16.
       -> Proyectil.cpp (mostrar)
+
+  sprite.setColor(sf::Color(255, 255, 255, alfa))
+      Tiñe el sprite: cada píxel de la imagen se multiplica por ese color. Con blanco (255, 255, 255)
+      los colores quedan iguales, y solo cambia la transparencia (el cuarto número). Así las casillas
+      rojas de un golpe se van desvaneciendo con la misma imagen del marcador.
+      -> Juego.cpp (dibujarExplosiones)
 
   textura.getSize()
       Ancho y alto de la textura en píxeles (sf::Vector2u). La barra de vida lo usa para saber
@@ -264,6 +273,12 @@ Hay tres cosas distintas y es fácil confundirlas:
         - Menu: el origen va en el centro del texto, así setPosition(640, ...) lo deja centrado.
       -> Mapa.cpp, Personaje.cpp, Menu.cpp
 
+  objeto.setScale(x, y)
+      Agranda (o achica) el objeto: 2 = el doble de ancho o de alto. El título del cartel de fin de
+      partida ("VICTORIA" / "DERROTA") es texto de tamaño 22 con setScale(2, 2), y no texto de
+      tamaño 44: así cada píxel de la letra se vuelve un cuadradito de 2x2 y se sigue viendo nítida.
+      -> Hud.cpp (dibujarFinDePartida)
+
   objeto.getLocalBounds()
       Devuelve el rectángulo (sf::FloatRect) que ocupa el objeto, medido sobre el objeto mismo,
       sin importar dónde esté ubicado. Sirve para saber su tamaño y calcular el origen.
@@ -300,16 +315,17 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
 7. FORMAS Y TIEMPO: sf::RectangleShape y sf::Clock
 ----------------------------------------------------------------------------------------------------
   sf::RectangleShape rectangulo(sf::Vector2f(ancho, alto))
-      Un rectángulo de color, sin imagen. Sirve para barras: la de vida de los enemigos y los
-      puntos de maná del HUD. Se ubica con setPosition como un sprite.
-      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarMana)
+      Un rectángulo de color, sin imagen. Sirve para barras: la de vida de los personajes, las del
+      HUD (vida, códice y puntos de maná) y el panel del cartel de fin de partida. Se ubica con
+      setPosition como un sprite.
+      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarBarra, dibujarMana, dibujarFinDePartida)
 
   rectangulo.setFillColor(sf::Color(...))
       Color de adentro.
   rectangulo.setOutlineThickness(1.f)
   rectangulo.setOutlineColor(sf::Color(...))
       Borde alrededor, de ese grosor y color. El borde se dibuja POR FUERA del rectángulo.
-      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarMana)
+      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarBarra, dibujarMana, dibujarFinDePartida)
 
   sf::Clock reloj
   reloj.restart()
@@ -334,6 +350,9 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
       -> Juego.cpp, Mapa.cpp, Camara.cpp, Personaje.cpp, Proyectil.cpp, Hud.cpp
       Se pueden sumar, restar, y multiplicar o dividir por un número: así se mueve la bola
       (posicion += direccion * paso) y se calcula el pecho del mago (pies - altura).
+      También se comparan con == y != (son iguales si coinciden la x y la y): la búsqueda de
+      camino de los enemigos vuelve para atrás hasta llegar a la casilla de inicio.
+      -> Juego.cpp (pasoHacia)
 
   sf::IntRect    un rectángulo con enteros: (x, y, ancho, alto). Elige un pedazo de una textura.
       -> Proyectil.cpp (mostrar)

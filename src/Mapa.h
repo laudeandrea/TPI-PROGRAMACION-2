@@ -28,7 +28,7 @@ class Mapa {
 		sf::Vector2f casillaAmundo(int fila, int columna) const;
 		sf::Vector2i mundoAcasilla(sf::Vector2f posicion) const;
 		sf::Vector2f getTamanioMundo() const;
-		/** @brief Cuantas casillas tiene cada lado del tablero (8). */
+		// Cuantas casillas tiene cada lado del tablero (8).
 		int getCantCasillas() const;
 		
 		/*Si la fila y la columna caen dentro del tablero. No mira el terreno. */

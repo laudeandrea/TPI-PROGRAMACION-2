@@ -1,9 +1,12 @@
 #include "Habilidad.h"
 
-Habilidad::Habilidad(std::string _nombre, int _danio, int _costoMana, int _alcance)
-    : nombre(_nombre), danio(_danio), costoMana(_costoMana), alcance(_alcance) {
+Habilidad::Habilidad(TipoHabilidad _tipo, std::string _nombre, int _danio, int _costoMana, int _alcance)
+    : tipo(_tipo), nombre(_nombre), danio(_danio), costoMana(_costoMana), alcance(_alcance) {
 }
 
+TipoHabilidad Habilidad::getTipo() const {
+    return tipo;
+}
 
 std::string Habilidad::getNombre() const {
     return nombre;
