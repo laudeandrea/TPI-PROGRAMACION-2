@@ -36,7 +36,6 @@ class Juego {
 		static constexpr float ALTURA_CABEZA = 72.f; // desde los pies hasta arriba de la cabeza: ahi aparece el numero de danio
 		static constexpr float ALTURA_CODICE = 54.f; // lo mismo para el codice (su imagen sobresale 46 px del centro de la casilla)
 		static constexpr float DURACION_EXPLOSION = 0.5f; // segundos que se ven las casillas rojas de un golpe
-		static const int SIN_HABILIDAD = -1;         // valor de habilidadPreparada cuando no hay ninguna elegida
 
 		// Donde arranca cada partida
 		static const int FILA_MAGO = 4, COLUMNA_MAGO = 1;
@@ -63,8 +62,9 @@ class Juego {
 		Menu menu;
 		EstadoJuego estado;
 		FaseTurno fase;
-		int habilidadPreparada; // indice de la habilidad elegida (0 = Q, 1 = W), o SIN_HABILIDAD
+		HabilidadSeleccionada habilidadPreparada;
 		bool magoSeleccionado;  // se hizo click en el mago: se muestran las casillas a las que puede ir
+		Enemigo* enemigoEmpujado; // el enemigo que empujo el mago este turno: pierde su turno (nullptr si no hay)
 
 		// Marcadores de casillas (movimiento y alcance de la habilidad) y las bolas que vuelan
 		sf::Texture texturaMovimiento, texturaAlcance, texturaObjetivo, texturaBola, texturaBolaEspectro;
@@ -114,7 +114,12 @@ class Juego {
 		// --- Turno del jugador ---
 		// Usa la habilidad preparada sobre esa casilla (si se puede: enemigo al alcance y mana suficiente).
 		void usarHabilidad(int fila, int columna);
+		// Si se puede empujar a ese enemigo: la casilla de atras existe, esta libre y la puede pisar (o es abismo).
+		bool sePuedeEmpujar(const Enemigo& enemigo) const;
+		// Casilla a la que iria el enemigo si lo empujan: un paso mas, alejandose del mago (x = columna, y = fila).
+		sf::Vector2i destinoEmpuje(const Enemigo& enemigo) const;
 		// Empuja al enemigo una casilla, alejandolo del mago. Si cae al abismo y no vuela, muere.
+		// Hay que llamar antes a sePuedeEmpujar().
 		void empujar(Enemigo& enemigo, int danio);
 		// Despues de que el mago actua: saca a los muertos y le pasa el turno a los enemigos.
 		void terminarTurnoJugador();

@@ -40,8 +40,8 @@ se queda sin vida o si destruyen el códice; se gana al terminar con la última 
 | Tecla | Qué hace |
 |---|---|
 | Click en el mago | Muestra a dónde puede caminar. Click en una casilla marcada lo mueve. |
-| **Q** | Bola de energía: 10 de daño a un enemigo a 3 casillas o menos. Cuesta 2 de maná. |
-| **W** | Empuje: 5 de daño a un enemigo pegado y lo corre una casilla. Si cae al abismo, muere (el espectro flota). Cuesta 3 de maná. |
+| **1** | Bola de energía: 10 de daño a un enemigo a 3 casillas o menos. Cuesta 2 de maná. |
+| **2** | Empuje: 5 de daño a un enemigo pegado y lo corre una casilla; ese turno el enemigo no juega. Si cae al abismo, muere (el espectro flota). Si atrás hay una columna, el borde u otro personaje, no se puede empujar y no gasta maná. Cuesta 3 de maná. |
 | **Espacio** | Pasar el turno. |
 | **Escape** | Volver al menú. |
 
@@ -50,7 +50,7 @@ Moverse, tirar una habilidad o pasar gasta el turno. Después juegan los enemigo
 | Enemigo | Vida | Cómo ataca |
 |---|---|---|
 | Caballero | 30 | Cuerpo a cuerpo: 25 de daño. |
-| Espectro | 40 | De lejos (hasta 3 casillas) con una bola de ectoplasma: 15 de daño. Atraviesa columnas y abismos. |
+| Espectro | 40 | De lejos (hasta 3 casillas) con una bola de ectoplasma: 8 de daño. Atraviesa columnas y abismos. |
 | Golem | 60 | Explota al llegar: 30 de daño a las 8 casillas de alrededor (también a otros enemigos) y se destruye. |
 
 Cada enemigo va por lo que tenga más cerca: el mago o el códice.
@@ -83,7 +83,7 @@ build/                 Generado al compilar (ignorado por git)
 | `Menu` | `Menu.h` / `Menu.cpp` | Pantalla de inicio: dibuja fondo, título y opciones, y se elige con flechas + Enter o con el mouse. El arte y las medidas están en [CONTRIBUTING.md](CONTRIBUTING.md#menú-principal). |
 | `Camara` | `Camara.h` / `Camara.cpp` | Encuadra el tablero y lo adapta al tamaño de la ventana sin deformarlo. |
 | `Personaje` | `Personaje.h` / `Personaje.cpp` | Clase base de todo lo que se para en el tablero: en qué casilla está, su vida, su imagen y cómo dibujarse. |
-| `Mago` | `Mago.h` / `Mago.cpp` | Hereda de `Personaje`. Agrega el maná (`gastarMana` no lo deja quedar negativo) y sus habilidades en un `std::vector<Habilidad>`: la bola de energía (Q) y el empuje (W). |
+| `Mago` | `Mago.h` / `Mago.cpp` | Hereda de `Personaje`. Agrega el maná (`gastarMana` no lo deja quedar negativo) y sus habilidades en un `std::vector<Habilidad>`: la bola de energía (tecla 1) y el empuje (tecla 2). |
 | `Habilidad` | `Habilidad.h` / `Habilidad.cpp` | Una habilidad del mago: tipo (`TipoHabilidad`), nombre, daño, costo de maná y alcance (en casillas). |
 | `Enemigo` | `Enemigo.h` / `Enemigo.cpp` | Hereda de `Personaje`. Lo común a todos los enemigos: el daño, el alcance de su ataque (`getAlcanceAtaque()`, `virtual`) y `atacar()`, también `virtual`, que devuelve un `Ataque`. |
 | `Caballero` | `Caballero.h` / `Caballero.cpp` | Hereda de `Enemigo` y usa el ataque de la base: un golpe a la casilla de al lado. |
@@ -95,6 +95,7 @@ build/                 Generado al compilar (ignorado por git)
 | `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Una bola que vuela (animada) hasta una casilla y guarda el daño que va a hacer. La usan la Q del mago y el espectro. |
 | `Hud` | `Hud.h` / `Hud.cpp` | Lo que se dibuja fijo en la pantalla: la oleada, la vida del mago y del códice, el maná, la ayuda de las teclas, los números de daño que suben y el cartel de victoria o derrota. |
 | `TipoTerreno` | `Casilla.h` | `enum` con los terrenos posibles: `SUELO`, `SUELO_OCUPADO` (donde está el códice: nadie lo pisa), `COLUMNAROTA`, `ABISMO`. |
+| `HabilidadSeleccionada` | `Habilidad.h` | `enum` con la habilidad que tiene preparada el jugador: `NINGUNA`, `BOLA_DE_ENERGIA` (= 1) y `EMPUJE` (= 2). El número coincide con la tecla y con el orden del vector del mago. |
 | `TipoHabilidad` | `Habilidad.h` | `enum` con lo que hace cada habilidad: `BOLADEENERGIA`, `EMPUJE` (y `MURO`, `PASO_ETEREO`, que todavía no existen). |
 | `EstadoJuego` | `Juego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `JUGANDO`, `GANASTE`, `PERDISTE`. |
 | `FaseTurno` | `Juego.h` | `enum` con de quién es el turno: `JUGADOR`, `DISPARANDO` (la bola del mago está volando), `ENEMIGOS` y `ENEMIGOS_DISPARANDO` (están volando las bolas de los espectros). Mientras vuela una bola, nadie se mueve. |
@@ -117,10 +118,12 @@ build/                 Generado al compilar (ignorado por git)
        puede caminar este turno (`casillasAlcanzables()`: una búsqueda por pasos que rodea pozos, columnas y
        personajes, hasta `MOVIMIENTO` pasos, constante en `Mago.h`). Click en una marcada lo mueve; click en
        cualquier otro lado cancela.
-       **Q** o **W** preparan una habilidad (`habilidadPreparada` guarda cuál: 0, 1 o `SIN_HABILIDAD`; la
-       misma tecla otra vez la cancela) y se marcan las casillas al alcance (celeste) y los enemigos a los
+       **1** o **2** preparan una habilidad (`habilidadPreparada` guarda cuál, como `HabilidadSeleccionada`;
+       la misma tecla otra vez la cancela) y se marcan las casillas al alcance (celeste) y los enemigos a los
        que se puede tirar (rojo). El click sobre un enemigo marcado llama a `usarHabilidad()`, que gasta el
        maná y, según el `TipoHabilidad`, crea un `Proyectil` (fase `DISPARANDO`) o empuja (`empujar()`).
+       El empuje primero pregunta `sePuedeEmpujar()`: si no hay lugar atrás, no pasa nada y no se gasta
+       maná. El enemigo empujado queda en `enemigoEmpujado` y pierde su próximo turno.
        **Espacio** pasa el turno.
      - **Fin de partida** (`GANASTE` o `PERDISTE`): Enter o Escape vuelven al menú.
    - **`actualizar(dt)`**: `dt` son los segundos desde el cuadro anterior (lo mide un `sf::Clock`).

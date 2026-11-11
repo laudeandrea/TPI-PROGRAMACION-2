@@ -237,7 +237,7 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
   - **Mana** (y = 612): mismo título y misma x de la barra, un rectángulo de 16×12 por cada punto (lleno en
     **Gema**, vacío en **Pizarra**; con una habilidad preparada, los puntos que se van a gastar en
     **Gema oscura**) y el número "8/10" en **Gema**. Las tres barras miden lo mismo, así quedan alineadas.
-  - **Ayuda** (y = 638): las habilidades una al lado de la otra, "[Q] Bola de energia (2)", en **Piedra** (o
+  - **Ayuda** (y = 638): las habilidades una al lado de la otra, "[1] Bola de energia (2)", en **Piedra** (o
     **Tenue** si no alcanza el maná), y al final "[Espacio] Pasar turno" en **Tenue**. Con una habilidad
     preparada o el mago seleccionado, se reemplaza por la instrucción de qué hacer (en **Gema** / **Piedra**).
 - **Oleada:** "Oleada 1/3" en **Piedra**, arriba a la izquierda, en (32, 24).

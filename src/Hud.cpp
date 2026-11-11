@@ -13,8 +13,6 @@ static const sf::Color GEMA_OSCURA(46, 140, 166);
 static const sf::Color PELIGRO(176, 74, 74);
 static const sf::Color PELIGRO_CLARO(232, 120, 110);
 
-// La tecla de cada habilidad, en el mismo orden que el vector del mago (tienen que coincidir con Juego::procesarEventos)
-static const std::string TECLAS[] = { "Q", "W" };
 
 // Medidas del HUD de abajo a la izquierda (ahi no esta el tablero)
 static const float X = 32.f;
@@ -58,7 +56,7 @@ void Hud::limpiar() {
 }
 
 void Hud::dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const Mago& mago,
-	const Pergamino& codice, const Nivel& nivel, int habilidadPreparada, bool magoSeleccionado) const {
+	const Pergamino& codice, const Nivel& nivel, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
 	ventana.setView(ventana.getDefaultView());
 	dibujarNumeros(ventana, vistaCamara);
 
@@ -101,10 +99,10 @@ void Hud::dibujarBarra(sf::RenderWindow& ventana, float y, const std::string& ti
 	ventana.draw(numero);
 }
 
-void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, int habilidadPreparada) const {
+void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const {
 	// Lo que va a costar la habilidad elegida (0 si no hay ninguna, o si no alcanza el mana: no se va a gastar nada)
 	int costo = 0;
-	if (habilidadPreparada != -1 && mago.getMana() >= mago.getHabilidad(habilidadPreparada).getCostoMana()) {
+	if (habilidadPreparada != HabilidadSeleccionada::NINGUNA && mago.getMana() >= mago.getHabilidad(habilidadPreparada).getCostoMana()) {
 		costo = mago.getHabilidad(habilidadPreparada).getCostoMana();
 	}
 
@@ -143,7 +141,7 @@ void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, int habilidad
 	ventana.draw(numero);
 }
 
-void Hud::dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, int habilidadPreparada, bool magoSeleccionado) const {
+void Hud::dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
 	// Con el mago seleccionado, la ayuda explica como moverse
 	if (magoSeleccionado) {
 		sf::Text texto = crearTexto("Click en una casilla marcada para moverte", 22, PIEDRA);
@@ -153,21 +151,23 @@ void Hud::dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, int habilida
 	}
 
 	// Con una habilidad preparada, explica como tirarla y como cancelarla
-	if (habilidadPreparada != -1) {
-		sf::Text texto = crearTexto("Click en un enemigo marcado  -  " + TECLAS[habilidadPreparada] + " cancela", 22, GEMA);
+	// La tecla es el numero del enum: 1 = bola, 2 = empuje
+	if (habilidadPreparada != HabilidadSeleccionada::NINGUNA) {
+		std::string tecla = std::to_string(static_cast<int>(habilidadPreparada));
+		sf::Text texto = crearTexto("Click en un enemigo marcado  -  [" + tecla + "] cancela", 22, GEMA);
 		texto.setPosition(X, Y_AYUDA);
 		ventana.draw(texto);
 		return;
 	}
 
-	// Si no, la lista de habilidades una al lado de la otra: "[Q] Bola de energia (2)".
+	// Si no, la lista de habilidades una al lado de la otra: "[1] Bola de energia (2)".
 	// Las que no alcanza el mana van en Tenue
 	float x = X;
-	for (int i = 0; i < mago.getCantHabilidades(); i++) {
-		const Habilidad& habilidad = mago.getHabilidad(i);
+	for (int i = 1; i <= mago.getCantidadHabilidades(); i++) {
+		const Habilidad& habilidad = mago.getHabilidad(HabilidadSeleccionada(i));
 		bool alcanza = mago.getMana() >= habilidad.getCostoMana();
 
-		std::string contenido = "[" + TECLAS[i] + "] " + habilidad.getNombre() + " (" + std::to_string(habilidad.getCostoMana()) + ")";
+		std::string contenido = "[" + std::to_string(i) + "] " + habilidad.getNombre() + " (" + std::to_string(habilidad.getCostoMana()) + ")";
 		sf::Text texto = crearTexto(contenido, 22, alcanza ? PIEDRA : TENUE);
 		texto.setPosition(x, Y_AYUDA);
 		ventana.draw(texto);

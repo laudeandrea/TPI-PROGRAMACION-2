@@ -13,8 +13,9 @@ Juego::Juego()
 	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA),
 	  estado(EstadoJuego::MENU),
 	  fase(FaseTurno::JUGADOR),
-	  habilidadPreparada(SIN_HABILIDAD),
-	  magoSeleccionado(false)
+	  habilidadPreparada(HabilidadSeleccionada::NINGUNA),
+	  magoSeleccionado(false),
+	  enemigoEmpujado(nullptr)
 {
 	// La casilla donde se encuentra el codice (pergamino) queda ocupada, no puede ser pisada.
 	mapa.setTipoTerreno(codice.getFila(),codice.getColumna(),TipoTerreno::SUELO_OCUPADO);
@@ -93,7 +94,7 @@ void Juego::procesarEventos() {
 		else {
 			// Escape vuelve al menu (idea de Santiago)
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-				habilidadPreparada = SIN_HABILIDAD; // al salir al menu se cancela la habilidad
+				habilidadPreparada = HabilidadSeleccionada::NINGUNA; // al salir al menu se cancela la habilidad
 				magoSeleccionado = false;
 				estado = EstadoJuego::MENU;
 			}
@@ -105,7 +106,7 @@ void Juego::procesarEventos() {
 				sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel, camara.getVista());
 				sf::Vector2i casilla = mapa.mundoAcasilla(posicionMundo); // x = columna, y = fila
 
-				if (habilidadPreparada != SIN_HABILIDAD) {
+				if (habilidadPreparada != HabilidadSeleccionada::NINGUNA) {
 					usarHabilidad(casilla.y, casilla.x);
 				}
 				else {
@@ -127,26 +128,27 @@ void Juego::procesarEventos() {
 				}
 			}
 
-			// Habilidades del mago: Q la primera, W la segunda. Si se apreta la misma otra vez, se cancela.
-			// Solo en el turno del jugador
+			// Habilidades del mago: 1 la bola, 2 el empuje (idea de Santiago: reemplazan a la Q).
+			// Si se apreta la misma otra vez, se cancela. Solo en el turno del jugador
 			if (event.type == sf::Event::KeyPressed && fase == FaseTurno::JUGADOR) {
-				int indice = SIN_HABILIDAD;
-				if (event.key.code == sf::Keyboard::Q) indice = 0;
-				if (event.key.code == sf::Keyboard::W) indice = 1;
+				HabilidadSeleccionada elegida = HabilidadSeleccionada::NINGUNA;
+				if (event.key.code == sf::Keyboard::Num1 || event.key.code == sf::Keyboard::Numpad1) {
+					elegida = HabilidadSeleccionada::BOLA_DE_ENERGIA;
+				}
+				if (event.key.code == sf::Keyboard::Num2 || event.key.code == sf::Keyboard::Numpad2) {
+					elegida = HabilidadSeleccionada::EMPUJE;
+				}
 
-				if (indice != SIN_HABILIDAD) {
-					if (habilidadPreparada == indice) {
-						habilidadPreparada = SIN_HABILIDAD;
-					}
-					else {
-						habilidadPreparada = indice;
-					}
+				if (elegida != HabilidadSeleccionada::NINGUNA) {
+					// apretar la misma tecla dos veces cancela
+					habilidadPreparada = (habilidadPreparada == elegida)
+						? HabilidadSeleccionada::NINGUNA : elegida;
 					magoSeleccionado = false; // o se mueve o tira la habilidad: no las dos cosas a la vez
 				}
 
 				// Espacio: pasa el turno sin hacer nada. Si el mago queda rodeado y sin mana, es la unica salida
 				if (event.key.code == sf::Keyboard::Space) {
-					habilidadPreparada = SIN_HABILIDAD;
+					habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 					magoSeleccionado = false;
 					terminarTurnoJugador();
 				}
@@ -186,7 +188,7 @@ void Juego::dibujar() {
 		if (magoSeleccionado && fase == FaseTurno::JUGADOR) {
 			dibujarMovimiento();
 		}
-		if (habilidadPreparada != SIN_HABILIDAD && fase == FaseTurno::JUGADOR) {
+		if (habilidadPreparada != HabilidadSeleccionada::NINGUNA && fase == FaseTurno::JUGADOR) {
 			dibujarAlcance();
 		}
 		dibujarExplosiones();
@@ -431,8 +433,9 @@ void Juego::reiniciarPartida() {
 	hud.limpiar();
 
 	fase = FaseTurno::JUGADOR;
-	habilidadPreparada = SIN_HABILIDAD;
+	habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 	magoSeleccionado = false;
+	enemigoEmpujado = nullptr;
 
 	empezarOleada();
 }
@@ -454,7 +457,7 @@ void Juego::empezarOleada() {
 void Juego::revisarFinDePartida() {
 	if (!mago.estaVivo() || codice.estaDestruido()) {
 		estado = EstadoJuego::PERDISTE;
-		habilidadPreparada = SIN_HABILIDAD;
+		habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 		magoSeleccionado = false;
 		return;
 	}
@@ -477,9 +480,17 @@ void Juego::usarHabilidad(int fila, int columna) {
 	Enemigo* objetivo = buscarEnemigoEn(fila, columna);
 	int distancia = distanciaAlMago(fila, columna);
 
-	// gastarMana va ultimo: por el cortocircuito del &&, solo gasta si todo lo anterior se cumple
-	if (fase != FaseTurno::JUGADOR || objetivo == nullptr
-		|| distancia > habilidad.getAlcance() || !mago.gastarMana(habilidad.getCostoMana())) {
+	if (fase != FaseTurno::JUGADOR || objetivo == nullptr || distancia > habilidad.getAlcance()) {
+		return;
+	}
+
+	// El empuje solo se hace si hay lugar atras del enemigo: si no, no pasa nada y no se gasta mana (idea de Santiago)
+	if (habilidad.getTipo() == TipoHabilidad::EMPUJE && !sePuedeEmpujar(*objetivo)) {
+		return;
+	}
+
+	// gastarMana va ultimo: si no alcanza el mana, no se hace nada
+	if (!mago.gastarMana(habilidad.getCostoMana())) {
 		return;
 	}
 
@@ -499,32 +510,46 @@ void Juego::usarHabilidad(int fila, int columna) {
 		terminarTurnoJugador(); // el empuje es instantaneo: no hay nada que esperar
 	}
 
-	habilidadPreparada = SIN_HABILIDAD;
+	habilidadPreparada = HabilidadSeleccionada::NINGUNA;
+}
+
+sf::Vector2i Juego::destinoEmpuje(const Enemigo& enemigo) const {
+	// Para que lado: desde el mago hacia el enemigo. Como estan pegados, es un paso en fila o en columna
+	int fila = enemigo.getFila() + (enemigo.getFila() - mago.getFila());
+	int columna = enemigo.getColumna() + (enemigo.getColumna() - mago.getColumna());
+	return sf::Vector2i(columna, fila);
+}
+
+bool Juego::sePuedeEmpujar(const Enemigo& enemigo) const {
+	sf::Vector2i destino = destinoEmpuje(enemigo);
+
+	// Contra el borde o contra otro personaje no se puede
+	if (!mapa.estaDentro(destino.y, destino.x) || casillaOcupada(destino.y, destino.x)) {
+		return false;
+	}
+
+	// Empuje forzado: el enemigo no elige, pero tiene que poder pararse ahi.
+	// El abismo se permite siempre: si no puede pisarlo, se cae (contra una columna o el codice, no)
+	TipoTerreno terreno = mapa.getTipoTerreno(destino.y, destino.x);
+	return enemigo.puedePisar(terreno) || terreno == TipoTerreno::ABISMO;
 }
 
 void Juego::empujar(Enemigo& enemigo, int danio) {
-	// Para que lado: desde el mago hacia el enemigo. Como estan pegados, es un paso en fila o en columna
-	int filaDestino = enemigo.getFila() + (enemigo.getFila() - mago.getFila());
-	int columnaDestino = enemigo.getColumna() + (enemigo.getColumna() - mago.getColumna());
+	sf::Vector2i destino = destinoEmpuje(enemigo); // se calcula antes de moverlo
 
 	daniarCasilla(enemigo.getFila(), enemigo.getColumna(), danio);
 	if (!enemigo.estaVivo()) return; // el golpe ya lo mato
 
-	// Contra el borde o contra otro personaje no se mueve
-	if (!mapa.estaDentro(filaDestino, columnaDestino) || casillaOcupada(filaDestino, columnaDestino)) {
+	enemigo.mover(destino.y, destino.x); // virtual puedePisar: el espectro flota sobre el abismo y no se cae
+
+	if (!enemigo.puedePisar(mapa.getTipoTerreno(destino.y, destino.x))) {
+		// No puede volar: cae al pozo y no vuelve. Se le saca toda la vida que le quedaba
+		daniarCasilla(destino.y, destino.x, enemigo.getVida());
 		return;
 	}
 
-	TipoTerreno terreno = mapa.getTipoTerreno(filaDestino, columnaDestino);
-	if (enemigo.puedePisar(terreno)) {
-		enemigo.mover(filaDestino, columnaDestino); // virtual: el espectro flota sobre el abismo y no se cae
-	}
-	else if (terreno == TipoTerreno::ABISMO) {
-		// No puede volar: cae al pozo y no vuelve. Se le saca toda la vida que le quedaba
-		enemigo.mover(filaDestino, columnaDestino);
-		daniarCasilla(filaDestino, columnaDestino, enemigo.getVida());
-	}
-	// Contra una columna rota (o el codice) choca y se queda donde esta
+	// Quedo aturdido por el golpe: este turno no hace nada (idea de Santiago)
+	enemigoEmpujado = &enemigo;
 }
 
 void Juego::terminarTurnoJugador() {
@@ -541,6 +566,7 @@ void Juego::turnoEnemigos() {
 	for (size_t i = 0; i < enemigos.size(); i++) {
 		Enemigo& enemigo = *enemigos[i];
 		if (!enemigo.estaVivo()) continue;
+		if (&enemigo == enemigoEmpujado) continue; // lo empujaron: pierde este turno
 
 		// Va por lo que tenga mas cerca: el mago o el codice. Si estan igual de lejos, prefiere el codice
 		int distanciaMago = distancia(enemigo.getFila(), enemigo.getColumna(), mago.getFila(), mago.getColumna());
@@ -582,6 +608,7 @@ void Juego::turnoEnemigos() {
 		}
 	}
 
+	enemigoEmpujado = nullptr; // el proximo turno ya juega normal
 	sacarMuertos();
 
 	if (proyectiles.empty()) {

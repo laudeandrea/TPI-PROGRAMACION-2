@@ -26,8 +26,8 @@ class Hud {
 		// Una fila del HUD: titulo a la izquierda, barra y "actual/maximo" a la derecha
 		void dibujarBarra(sf::RenderWindow& ventana, float y, const std::string& titulo,
 			int actual, int maximo, sf::Color color) const;
-		void dibujarMana(sf::RenderWindow& ventana, const Mago& mago, int habilidadPreparada) const;
-		void dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, int habilidadPreparada, bool magoSeleccionado) const;
+		void dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const;
+		void dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const;
 		void dibujarNumeros(sf::RenderWindow& ventana, const sf::View& vistaCamara) const;
 		// Crea un texto con la fuente y el estilo del juego.
 		sf::Text crearTexto(const std::string& contenido, unsigned int tamanio, sf::Color color) const;
@@ -41,9 +41,8 @@ class Hud {
 		// Borra los numeros que quedaron en pantalla (al empezar una partida nueva).
 		void limpiar();
 		// Dibuja todo. Cambia la vista de la ventana a la vista por defecto.
-		// habilidadPreparada: el indice de la habilidad elegida, o -1 si no hay ninguna.
 		void dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const Mago& mago,
-			const Pergamino& codice, const Nivel& nivel, int habilidadPreparada, bool magoSeleccionado) const;
+			const Pergamino& codice, const Nivel& nivel, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const;
 		// Oscurece la pantalla y muestra si se gano o se perdio. Se llama despues de dibujar().
 		void dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::string& motivo) const;
 };

@@ -133,8 +133,9 @@ Se leen con window.pollEvent(event).
         sf::Keyboard::Up / Down   -> flechas arriba y abajo
         sf::Keyboard::Enter       -> Enter
         sf::Keyboard::Escape      -> Escape (en el tablero, vuelve al menú)
-        sf::Keyboard::Q           -> Q (en el tablero, prepara o cancela la bola de energía)
-        sf::Keyboard::W           -> W (en el tablero, prepara o cancela el empuje)
+        sf::Keyboard::Num1 / Numpad1 -> 1 de arriba de las letras o del teclado numérico
+                                        (en el tablero, prepara o cancela la bola de energía)
+        sf::Keyboard::Num2 / Numpad2 -> 2 (en el tablero, prepara o cancela el empuje)
         sf::Keyboard::Space       -> barra espaciadora (en el tablero, pasa el turno)
         sf::Keyboard::Enter       -> también cierra el cartel de victoria o derrota
       -> Menu.cpp (procesarEvento), Juego.cpp (procesarEventos)
