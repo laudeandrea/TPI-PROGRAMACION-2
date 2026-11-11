@@ -67,7 +67,6 @@ juego_pr2.rc           Ícono del .exe (usa Imagenes/icono.ico)
 src/                   Código del juego (.cpp y .h)
 Imagenes/              Texturas e íconos
 Fuentes/               Fuente del juego (Pixelify Sans) y su licencia (OFL.txt)
-herramientas/          Scripts en Python que generan el arte del tablero, de las habilidades y de los ataques (ver CONTRIBUTING)
 libs/SFML-2.6.2/       SFML: headers, .lib y DLL (Debug con -d, Release sin -d)
 build/                 Generado al compilar (ignorado por git)
 ```

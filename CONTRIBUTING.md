@@ -209,11 +209,10 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
   más claras que el borde.
 - **Pocos detalles:** el piso es el fondo de la acción. Como mucho un reflejo suave por losa (y solo en la
   mitad de ellas); la grieta, el musgo y la runa son pocos y suaves para que no distraigan de los personajes.
-- **Cómo se generan:** todas estas imágenes salen de [herramientas/generar_arte_mapa.py](herramientas/generar_arte_mapa.py).
-  Para cambiar algo (un color, una variante nueva), se edita el script y se corre desde la raíz del repo:
-  `python herramientas/generar_arte_mapa.py` (hace falta `pip install pillow`). Deja los PNG en `salida_arte/`
-  (ignorada por git); se revisan y después se copian a `Imagenes/`. No retoques los PNG a mano: la próxima
-  vez que alguien corra el script se pierde el retoque.
+- **Cómo se generan:** con un script de Python (`generar_arte_mapa.py`) que **no está en el repositorio**,
+  porque el proyecto es solo C++: está en la carpeta `herramientas/` de la PC de Lautaro (ignorada por git).
+  Para cambiar algo (un color, una variante nueva), se edita el script y se vuelven a generar los PNG en
+  `Imagenes/`. No retoques los PNG a mano: la próxima vez que se corra el script se pierde el retoque.
 
 ### Habilidades, ataques y HUD
 
@@ -250,9 +249,9 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
 - **Números de daño:** "-10" en rojo claro (`#E8786E`), fuente 22 con borde **Fondo** de 2 px. Aparecen
   arriba de la cabeza, suben 22 px en 0,9 s y en la segunda mitad se desvanecen.
 - **Todo el texto del HUD es tamaño 22** y lleva un borde oscuro de 2 px, para leerse sobre cualquier cosa.
-- **Cómo se generan:** [herramientas/generar_arte_habilidad.py](herramientas/generar_arte_habilidad.py)
-  (marcadores y bola de energía) y [herramientas/generar_arte_enemigos.py](herramientas/generar_arte_enemigos.py)
-  (bola del espectro), igual que el arte del mapa: `python herramientas/generar_arte_enemigos.py`.
+- **Cómo se generan:** igual que el arte del mapa, con scripts de Python que no están en el repositorio
+  (`generar_arte_habilidad.py` para los marcadores y la bola de energía, `generar_arte_enemigos.py` para la
+  bola del espectro).
 
 ## Git
 

@@ -18,6 +18,8 @@
 /_plantilla_cmake/
 /.vscode
 /salida_arte/
+# Scripts de Python que generan el arte: el repositorio es solo C++
+/herramientas/
 
 # Configuracion personal de cada PC
 CMakeUserPresets.json
