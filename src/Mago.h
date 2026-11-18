@@ -8,7 +8,8 @@ class Mago : public Personaje {
     private:
         int mana;
         std::vector<Habilidad> habilidades;
-        static const int VIDA_INICIAL = 100;
+        // 130: aguanta 5 golpes del caballero (25) y 4 del golem (30)
+        static const int VIDA_INICIAL = 130;
         static const int MANA_INICIAL = 10;
         static const int MANA_MAXIMO = 10;
         static const int MOVIMIENTO = 3; // cuantos pasos puede caminar por turno (cambiar aca para probar otros)

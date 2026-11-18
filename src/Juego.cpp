@@ -466,6 +466,13 @@ void Juego::revisarFinDePartida() {
 		if (nivel.hayOtraOleada()) {
 			nivel.pasarDeOleada();
 			empezarOleada();
+
+			// Respiro: la oleada nueva ya esta en el tablero, pero no actua en el mismo instante.
+			// Le devolvemos el turno al jugador para que vea de donde salen y se prepare.
+			// No se le da mana extra: eso lo hace empezarTurnoJugador() al empezar un turno normal.
+			fase = FaseTurno::JUGADOR;
+			habilidadPreparada = HabilidadSeleccionada::NINGUNA;
+			magoSeleccionado = false;
 		}
 		else {
 			estado = EstadoJuego::GANASTE;

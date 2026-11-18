@@ -34,21 +34,14 @@ std::vector<std::unique_ptr<Enemigo>> Nivel::crearOleada() const {
 	// Salen del lado derecho del tablero, lejos del codice (que esta en la columna 0).
 	// Todas las casillas de salida son de suelo: (fila, columna)
 	switch (oleada) {
-	case 0:
+	case 0: // primera: dos enemigos, uno cuerpo a cuerpo y uno de lejos
 		enemigos.push_back(std::make_unique<Caballero>(4, 6));
 		enemigos.push_back(std::make_unique<Espectro>(1, 3));
-		enemigos.push_back(std::make_unique<Golem>(1, 5));
 		break;
-	case 1:
+	default: // la ultima: tres, con el golem de remate
 		enemigos.push_back(std::make_unique<Caballero>(0, 7));
-		enemigos.push_back(std::make_unique<Caballero>(7, 7));
 		enemigos.push_back(std::make_unique<Espectro>(3, 7));
-		break;
-	default: // la ultima: un poco de todo
-		enemigos.push_back(std::make_unique<Golem>(0, 6));
 		enemigos.push_back(std::make_unique<Golem>(7, 6));
-		enemigos.push_back(std::make_unique<Espectro>(1, 7));
-		enemigos.push_back(std::make_unique<Caballero>(4, 7));
 		break;
 	}
 

@@ -34,7 +34,8 @@ La carpeta `build\` se puede borrar cuando quieras: se vuelve a generar al compi
 
 ## Cómo se juega
 
-Hay que defender el **códice** (el libro sobre el atril) de **3 oleadas** de enemigos. Se pierde si el mago
+Hay que defender el **códice** (el libro sobre el atril) de **2 oleadas** de enemigos. La primera trae dos
+enemigos y la segunda tres, con el golem al final. Se pierde si el mago
 se queda sin vida o si destruyen el códice; se gana al terminar con la última oleada.
 
 | Tecla | Qué hace |
@@ -90,7 +91,7 @@ build/                 Generado al compilar (ignorado por git)
 | `Espectro` | `Espectro.h` / `Espectro.cpp` | Hereda de `Enemigo`. Redefine `puedePisar` (vuela sobre abismos y columnas), `getAlcanceAtaque` (3) y `lanzaProyectil` (su ataque viaja como una bola). |
 | `Golem` | `Golem.h` / `Golem.cpp` | Hereda de `Enemigo`. Redefine `atacar`: explota, le pega a las 8 casillas de alrededor y se queda sin vida. |
 | `Ataque` | `Enemigo.h` | `struct` con lo que hace un ataque: a qué casillas les pega y cuánto. El enemigo no sabe quién está ahí: el `Juego` lastima al que esté (`daniarCasilla()`). |
-| `Pergamino` | `Pergamino.h` / `Pergamino.cpp` | El códice que hay que defender: su casilla, su vida (50) y su dibujo (cambia a dañado con menos de la mitad). No es un `Personaje`. |
+| `Pergamino` | `Pergamino.h` / `Pergamino.cpp` | El códice que hay que defender: su casilla, su vida (80) y su dibujo (cambia a dañado con menos de la mitad). No es un `Personaje`. |
 | `Nivel` | `Nivel.h` / `Nivel.cpp` | Las oleadas de enemigos: en cuál se está (`getOleada()`), si hay otra (`hayOtraOleada()`) y `crearOleada()`, que arma los enemigos de la oleada actual. |
 | `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Una bola que vuela (animada) hasta una casilla y guarda el daño que va a hacer. La usan la Q del mago y el espectro. |
 | `Hud` | `Hud.h` / `Hud.cpp` | Lo que se dibuja fijo en la pantalla: la oleada, la vida del mago y del códice, el maná, la ayuda de las teclas, los números de daño que suben y el cartel de victoria o derrota. |
@@ -131,7 +132,8 @@ build/                 Generado al compilar (ignorado por git)
        esté en su casilla (`daniarCasilla()`). Cuando llegaron todas, sigue el turno que corresponde.
      - Cuando el mago termina su acción, `terminarTurnoJugador()` saca a los enemigos sin vida, le pasa el
        turno a los enemigos y llama a `revisarFinDePartida()`: si no quedan enemigos, aparece la próxima
-       oleada o se gana.
+       oleada o se gana. La oleada nueva no juega en ese mismo momento: `revisarFinDePartida()` devuelve el
+       turno al jugador (respiro) para que la vea aparecer y pueda reaccionar.
      - En el turno de los enemigos (`turnoEnemigos()`), cada uno elige lo que tenga más cerca (el mago o el
        códice) y hace una sola cosa: si le llega (`puedeAtacar()`) ataca; si no, da un paso.
        - **Atacar:** `atacar()` es `virtual`, así que se ejecuta el del enemigo que sea de verdad. Devuelve

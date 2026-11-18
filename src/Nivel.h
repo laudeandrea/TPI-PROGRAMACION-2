@@ -7,7 +7,7 @@
 *  Despues de la ultima, se gano el nivel. */
 class Nivel {
 	private:
-		static const int CANT_OLEADAS = 3;
+		static const int CANT_OLEADAS = 2;
 		int numero;
 		int oleada; // la oleada en la que se esta peleando, empieza en 0
 	public:

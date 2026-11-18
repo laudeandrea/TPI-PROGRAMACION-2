@@ -6,7 +6,8 @@
 
 class Pergamino {
     private:
-        static const int VIDA_MAXIMA = 50;
+        // 80: aguanta 3 golpes del caballero (25 cada uno) y muere en el cuarto
+        static const int VIDA_MAXIMA = 80;
         static constexpr float CENTRO_ROMBO_DESDE_ABAJO = 34.f; // del fondo de la imagen al centro de la cara de arriba
         int fila, columna;
         int vidaActual;
