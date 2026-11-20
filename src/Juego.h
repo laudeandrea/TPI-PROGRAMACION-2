@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SFML/graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include "Camara.h"
 #include "Mapa.h"
 #include "Mago.h"
@@ -74,6 +74,7 @@ class Juego {
 		FaseTurno fase;
 		HabilidadSeleccionada habilidadPreparada;
 		bool magoSeleccionado;  // se hizo click en el mago: se muestran las casillas a las que puede ir
+		bool magoSeMovio;       // ya camino este turno: puede tirar una habilidad o pasar, pero no volver a moverse
 		Enemigo* enemigoEmpujado; // el enemigo que empujo el mago este turno: pierde su turno (nullptr si no hay)
 
 		// Marcadores de casillas (movimiento y alcance de la habilidad) y las bolas que vuelan

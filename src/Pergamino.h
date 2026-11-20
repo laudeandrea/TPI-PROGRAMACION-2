@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SFML/graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include "Mapa.h"
 #include "Habilidad.h" // TipoHabilidad: la habilidad que guarda el codice
 

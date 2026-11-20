@@ -1,5 +1,5 @@
 #pragma once
-#include <SFML/graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include <vector>
 #include "Mago.h"
 #include "Pergamino.h"

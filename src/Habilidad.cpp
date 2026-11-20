@@ -39,7 +39,3 @@ int Habilidad::getAlcance() const {
 void Habilidad::setAlcance(int _alcance){
     alcance = _alcance;
 }
-
-void Habilidad::usar(){
-
-}

@@ -212,7 +212,7 @@ void Hud::dibujarHabilidades(sf::RenderWindow& ventana, const Mago& mago, Habili
 	}
 
 	// Al final, como pasar el turno (Tenue: es secundario)
-	sf::Text pasar = crearTexto("[Espacio] Pasar turno", 22, TENUE);
+	sf::Text pasar = crearTexto("[Espacio] Terminar turno", 22, TENUE);
 	pasar.setPosition(X, y + 6.f);
 	ventana.draw(pasar);
 }

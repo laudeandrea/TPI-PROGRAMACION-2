@@ -16,6 +16,7 @@ Juego::Juego()
 	  fase(FaseTurno::JUGADOR),
 	  habilidadPreparada(HabilidadSeleccionada::NINGUNA),
 	  magoSeleccionado(false),
+	  magoSeMovio(false),
 	  enemigoEmpujado(nullptr)
 {
 	//Inicialización de la ventana
@@ -123,14 +124,16 @@ void Juego::procesarEventos() {
 					// --- MOVER ---
 					// 1er click en el mago: lo selecciona y muestra a donde puede ir.
 					// 2do click: en una casilla marcada lo mueve; en cualquier otro lado cancela.
-					if (fase == FaseTurno::JUGADOR) {
+					// Moverse NO termina el turno: despues puede tirar una habilidad o pasar con Espacio.
+					// Se mueve una sola vez por turno, y antes de atacar (la habilidad termina el turno)
+					if (fase == FaseTurno::JUGADOR && !magoSeMovio) {
 						if (mago.estaEn(casilla.y, casilla.x)) {
 							magoSeleccionado = !magoSeleccionado;
 						}
 						else if (magoSeleccionado) {
 							if (magoPuedeIrA(casilla.y, casilla.x)) {
 								mago.mover(casilla.y, casilla.x);
-								terminarTurnoJugador();
+								magoSeMovio = true;
 							}
 							magoSeleccionado = false;
 						}
@@ -153,7 +156,7 @@ void Juego::procesarEventos() {
 					// apretar la misma tecla dos veces cancela
 					habilidadPreparada = (habilidadPreparada == elegida)
 						? HabilidadSeleccionada::NINGUNA : elegida;
-					magoSeleccionado = false; // o se mueve o tira la habilidad: no las dos cosas a la vez
+					magoSeleccionado = false; // con una habilidad en la mano no se elige casilla para caminar
 				}
 
 				// Espacio: pasa el turno sin hacer nada. Si el mago queda rodeado y sin mana, es la unica salida
@@ -497,6 +500,7 @@ void Juego::empezarNivel(int numero) {
 	fase = FaseTurno::JUGADOR;
 	habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 	magoSeleccionado = false;
+	magoSeMovio = false;
 	enemigoEmpujado = nullptr;
 
 	empezarOleada();
@@ -535,6 +539,7 @@ void Juego::revisarFinDePartida() {
 			fase = FaseTurno::JUGADOR;
 			habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 			magoSeleccionado = false;
+			magoSeMovio = false;
 		}
 		else {
 			// Se gano el nivel: si hay otro, cartel para seguir (el nivel nuevo lo arma Enter, ver procesarEventos)
@@ -790,6 +795,7 @@ void Juego::turnoEnemigos() {
 
 void Juego::empezarTurnoJugador() {
 	fase = FaseTurno::JUGADOR;
+	magoSeMovio = false;                // turno nuevo: puede volver a caminar
 	mago.recuperarMana(MANA_POR_TURNO); // empieza el turno del jugador: recupera un poco de mana
 	apagarMuros();                      // y al fuego le queda un turno menos
 	revisarFinDePartida();

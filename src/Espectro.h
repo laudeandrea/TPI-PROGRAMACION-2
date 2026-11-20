@@ -3,7 +3,7 @@
 
 class Espectro : public Enemigo {
     private:
-        static const int VIDA_INICIAL = 40;
+        static const int VIDA_INICIAL = 20; // 2 bolas de energia
 		static const int DANIO = 8;
 		static const int ALCANCE_ATAQUE = 3;
 	public:

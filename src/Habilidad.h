@@ -3,7 +3,7 @@
 #include <string>
 
 // Que hace la habilidad. El Juego mira esto para saber si tira una bola, empuja, etc.
-enum class TipoHabilidad { BOLADEENERGIA, EMPUJE, MURO, PASO_ETEREO};
+enum class TipoHabilidad { BOLADEENERGIA, EMPUJE, MURO };
 
 /* Cual de las habilidades del mago esta en la mano.
  * Los valores coinciden con la tecla: 1 = bola, 2 = empuje, 3 = muro de fuego (se aprende en el nivel 2). */
@@ -31,6 +31,4 @@ class Habilidad {
         void setCostoMana(int _costoMana);
         int getAlcance() const;
         void setAlcance(int _alcance);
-
-        void usar();
 };

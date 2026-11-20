@@ -51,15 +51,15 @@ con la vida y el maná llenos.
 | **1** | Bola de energía: 10 de daño a un enemigo a 3 casillas o menos. Cuesta 2 de maná. |
 | **2** | Empuje: 5 de daño a un enemigo pegado y lo corre una casilla; ese turno el enemigo no juega. Si cae al abismo, muere (el espectro flota). Si atrás hay una columna, el borde u otro personaje, no se puede empujar y no gasta maná. Cuesta 3 de maná. |
 | **3** | Muro de fuego (solo desde el nivel 2): prende fuego en 3 casillas vacías, a 3 casillas del mago o menos, de costado a la línea entre el mago y la casilla elegida (al pasar el mouse se ve en rojo dónde va a quedar). Dura 3 turnos de los enemigos. Nadie lo puede pisar, salvo el espectro, que lo cruza pero pierde 10 de vida cada vez que entra o que empieza su turno ahí. Cuesta 4 de maná. |
-| **Espacio** | Pasar el turno. |
+| **Espacio** | Terminar el turno. |
 | **Escape** | Volver al menú. |
 
-Moverse, tirar una habilidad o pasar gasta el turno. Después juegan los enemigos y el mago recupera 2 de maná.
+En cada turno el mago puede moverse una vez y después tirar una habilidad. Tirar una habilidad o apretar Espacio termina el turno (moverse no). Después juegan los enemigos y el mago recupera 2 de maná.
 
 | Enemigo | Vida | Cómo ataca |
 |---|---|---|
-| Caballero | 30 | Cuerpo a cuerpo: 12 de daño. |
-| Espectro | 40 | De lejos (hasta 3 casillas) con una bola de ectoplasma: 8 de daño. Atraviesa columnas, abismos y el muro de fuego (quemándose). |
+| Caballero | 20 | Cuerpo a cuerpo: 12 de daño. |
+| Espectro | 20 | De lejos (hasta 3 casillas) con una bola de ectoplasma: 8 de daño. Atraviesa columnas, abismos y el muro de fuego (quemándose). |
 | Golem | 60 | Explota al llegar: 30 de daño a las 8 casillas de alrededor (también a otros enemigos) y se destruye. |
 
 Cada enemigo va por lo que tenga más cerca: el mago o el códice.
@@ -106,7 +106,7 @@ build/                 Generado al compilar (ignorado por git)
 | `Muro` | `Juego.h` | `struct` con una casilla del muro de fuego y cuántos turnos le quedan. Mientras dura, esa casilla del mapa es `TipoTerreno::MURO`. |
 | `TipoTerreno` | `Casilla.h` | `enum` con los terrenos posibles: `SUELO`, `SUELO_OCUPADO` (donde está el códice: nadie lo pisa), `COLUMNAROTA`, `ABISMO` y `MURO` (fuego: solo lo cruza el espectro). |
 | `HabilidadSeleccionada` | `Habilidad.h` | `enum` con la habilidad que tiene preparada el jugador: `NINGUNA`, `BOLA_DE_ENERGIA` (= 1), `EMPUJE` (= 2) y `MURO` (= 3). El número coincide con la tecla y con el orden del vector del mago. |
-| `TipoHabilidad` | `Habilidad.h` | `enum` con lo que hace cada habilidad: `BOLADEENERGIA`, `EMPUJE`, `MURO` (y `PASO_ETEREO`, que todavía no existe). |
+| `TipoHabilidad` | `Habilidad.h` | `enum` con lo que hace cada habilidad: `BOLADEENERGIA`, `EMPUJE`, `MURO`. |
 | `EstadoJuego` | `Juego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `JUGANDO`, `NIVEL_SUPERADO`, `GANASTE`, `PERDISTE`. |
 | `FaseTurno` | `Juego.h` | `enum` con de quién es el turno: `JUGADOR`, `DISPARANDO` (la bola del mago está volando), `ENEMIGOS` y `ENEMIGOS_DISPARANDO` (están volando las bolas de los espectros). Mientras vuela una bola, nadie se mueve. |
 
@@ -131,7 +131,8 @@ build/                 Generado al compilar (ignorado por git)
        del HUD). Para moverse, click en el mago: se marcan las casillas a las que
        puede caminar este turno (`casillasAlcanzables()`: una búsqueda por pasos que rodea pozos, columnas y
        personajes, hasta `MOVIMIENTO` pasos, constante en `Mago.h`). Click en una marcada lo mueve; click en
-       cualquier otro lado cancela.
+       cualquier otro lado cancela. Moverse no termina el turno: `magoSeMovio` queda en `true` (no puede volver
+       a caminar hasta el turno siguiente) y todavía puede tirar una habilidad o apretar Espacio.
        **1**, **2** o **3** preparan una habilidad (`habilidadPreparada` guarda cuál, como `HabilidadSeleccionada`;
        la misma tecla otra vez la cancela; si el mago todavía no la aprendió, `tieneHabilidad()` da `false` y no
        pasa nada) y se marcan las casillas al alcance (celeste) y los enemigos a los
@@ -144,7 +145,7 @@ build/                 Generado al compilar (ignorado por git)
        vecinas de costado a la línea mago → centro; las que no están libres se saltean). El click llama a
        `usarHabilidad()`, que para el muro no busca un enemigo: pregunta `sePuedePonerMuro()`, gasta el maná
        y `ponerMuro()` cambia esas casillas a `TipoTerreno::MURO` y las guarda en `muros`.
-       **Espacio** pasa el turno.
+       **Espacio** termina el turno.
      - **Nivel superado** (`NIVEL_SUPERADO`): Enter llama a `empezarNivel(numero + 1)` y vuelve a `JUGANDO`;
        Escape vuelve al menú.
      - **Fin de partida** (`GANASTE` o `PERDISTE`): Enter o Escape vuelven al menú.

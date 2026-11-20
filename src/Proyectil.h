@@ -1,5 +1,5 @@
 #pragma once
-#include <SFML/graphics.hpp>
+#include <SFML/Graphics.hpp>
 
 /* Una bola que viaja en linea recta hasta la casilla objetivo: la tira el mago (Q) o un espectro.
 *  Al llegar, el Juego aplica el danio (el proyectil solo se mueve y se dibuja). */
