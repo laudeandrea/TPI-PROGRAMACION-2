@@ -6,7 +6,7 @@ Todo lo de SFML empieza con "sf::". Versión: SFML 2.6.2.
 
 Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no está acá, falta agregarlo.
 
-Última actualización: 11/11/2026
+Última actualización: 20/11/2026
 
 ----------------------------------------------------------------------------------------------------
 1. LA VENTANA: sf::RenderWindow
@@ -94,7 +94,13 @@ Se crea una sola vez, en Juego.
       ¡CUIDADO! La vista que queda puesta es la ÚLTIMA que se usó al dibujar. En el juego es la del
       HUD, no la de la cámara: por eso el click del tablero le pasa camara.getVista(). Sin eso, el
       click cae en otra casilla.
-      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento), Hud.cpp (dibujarNumeros)
+      -> Juego.cpp (procesarEventos y casillaBajoElMouse), Menu.cpp (procesarEvento), Hud.cpp (dibujarNumeros)
+
+  window.getViewport(vista)
+      En qué rectángulo de la ventana se dibuja esa vista, ya en píxeles (un sf::IntRect). Es su
+      viewport (ver vista.setViewport más abajo) pasado de proporciones a píxeles: con la cámara,
+      (0, 0, 960, 720). El juego lo usa para ignorar los clicks que caen sobre el panel del HUD.
+      -> Juego.cpp (procesarEventos)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -136,9 +142,17 @@ Se leen con window.pollEvent(event).
         sf::Keyboard::Num1 / Numpad1 -> 1 de arriba de las letras o del teclado numérico
                                         (en el tablero, prepara o cancela la bola de energía)
         sf::Keyboard::Num2 / Numpad2 -> 2 (en el tablero, prepara o cancela el empuje)
+        sf::Keyboard::Num3 / Numpad3 -> 3 (en el tablero, prepara o cancela el muro de fuego)
         sf::Keyboard::Space       -> barra espaciadora (en el tablero, pasa el turno)
-        sf::Keyboard::Enter       -> también cierra el cartel de victoria o derrota
+        sf::Keyboard::Enter       -> también pasa al nivel siguiente y cierra el cartel de victoria o derrota
       -> Menu.cpp (procesarEvento), Juego.cpp (procesarEventos)
+
+  sf::Mouse::getPosition(window)
+      En qué píxel de la ventana está el mouse AHORA (un sf::Vector2i), sin esperar un evento.
+      Sirve para lo que se dibuja según dónde está el mouse: con el muro de fuego preparado, se
+      marca en rojo dónde quedaría el muro debajo del mouse.
+      ¡CUIDADO! Sin pasarle la ventana devuelve la posición en TODA la pantalla, no en la ventana.
+      -> Juego.cpp (casillaBajoElMouse)
 
   const sf::Event& evento (como parámetro)
       Menu::procesarEvento recibe el evento que leyó Juego, para que el menú decida qué hacer con él.
@@ -198,8 +212,8 @@ Hay tres cosas distintas y es fácil confundirlas:
   sprite.setTextureRect(sf::IntRect(x, y, ancho, alto))
       Muestra solo un pedazo de la textura. Sirve para animar: la imagen de la bola de energía
       tiene 2 cuadros de 16x16 uno al lado del otro, y según el tiempo se muestra el de x = 0 o el
-      de x = 16.
-      -> Proyectil.cpp (mostrar)
+      de x = 16. El muro de fuego hace lo mismo con 3 cuadros de 64x84.
+      -> Proyectil.cpp (mostrar), Mapa.cpp (mostrar: el muro de fuego)
 
   sprite.setColor(sf::Color(255, 255, 255, alfa))
       Tiñe el sprite: cada píxel de la imagen se multiplica por ese color. Con blanco (255, 255, 255)
@@ -256,6 +270,17 @@ Hay tres cosas distintas y es fácil confundirlas:
       el texto se lea encima de cualquier cosa (el piso, el vacío, un personaje).
       -> Hud.cpp (crearTexto y dibujarNumeros)
 
+  Saltos de línea: "
+" adentro del string
+      Un sf::Text puede tener varios renglones: se cortan con 
+, como en la consola. El panel del HUD
+      es angosto, así que la ayuda se escribe en varios renglones.
+      -> Hud.cpp (dibujarAyuda)
+
+  texto.setLineSpacing(1.2f)
+      Separación entre renglones: 1 es la normal de la fuente, 1.2 es un 20 % más.
+      -> Hud.cpp (dibujarAyuda)
+
 
 ----------------------------------------------------------------------------------------------------
 5. POSICIÓN Y ORIGEN (sirven igual para sf::Sprite y sf::Text)
@@ -278,12 +303,13 @@ Hay tres cosas distintas y es fácil confundirlas:
       Agranda (o achica) el objeto: 2 = el doble de ancho o de alto. El título del cartel de fin de
       partida ("VICTORIA" / "DERROTA") es texto de tamaño 22 con setScale(2, 2), y no texto de
       tamaño 44: así cada píxel de la letra se vuelve un cuadradito de 2x2 y se sigue viendo nítida.
-      -> Hud.cpp (dibujarFinDePartida)
+      -> Hud.cpp (dibujarCartel)
 
   objeto.getLocalBounds()
       Devuelve el rectángulo (sf::FloatRect) que ocupa el objeto, medido sobre el objeto mismo,
       sin importar dónde esté ubicado. Sirve para saber su tamaño y calcular el origen.
-      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+      Con texto, sirve para alinearlo a la derecha: se lo corre a la izquierda todo su ancho.
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp, Hud.cpp (dibujarTextoDerecha, dibujarNumeros, dibujarCartel)
 
   objeto.getGlobalBounds()
       El mismo rectángulo, pero ya ubicado en el mundo (con setPosition y setOrigin aplicados).
@@ -311,22 +337,33 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
       Cuánto del mundo entra en la vista.
       -> Camara.cpp (constructor y ajustarAVentana)
 
+  vista.setViewport(sf::FloatRect(0.f, 0.f, 0.75f, 1.f))
+      En qué pedazo de la VENTANA se dibuja la vista. No va en píxeles sino en proporciones de 0 a 1:
+      (x, y, ancho, alto) = (0, 0, 0.75, 1) es "desde la izquierda, el 75 % del ancho y todo el alto".
+      La cámara lo usa para dejar libre la derecha para el panel del HUD. Por defecto es (0, 0, 1, 1).
+      ¡CUIDADO! Si la vista ocupa solo el 75 % del ancho, al calcular la proporción para no deformar
+      hay que usar ese 75 %, no el ancho entero (ver ajustarAVentana).
+      mapPixelToCoords y mapCoordsToPixel ya tienen en cuenta el viewport.
+      -> Camara.cpp (constructor)
+
 
 ----------------------------------------------------------------------------------------------------
 7. FORMAS Y TIEMPO: sf::RectangleShape y sf::Clock
 ----------------------------------------------------------------------------------------------------
   sf::RectangleShape rectangulo(sf::Vector2f(ancho, alto))
       Un rectángulo de color, sin imagen. Sirve para barras: la de vida de los personajes, las del
-      HUD (vida, códice y puntos de maná) y el panel del cartel de fin de partida. Se ubica con
-      setPosition como un sprite.
-      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarBarra, dibujarMana, dibujarFinDePartida)
+      HUD (vida, códice y puntos de maná), el panel de la derecha, sus líneas separadoras y el panel
+      de los carteles. Se ubica con setPosition como un sprite.
+      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarPanel, dibujarSeparador, dibujarBarra,
+         dibujarMana, dibujarCartel)
 
   rectangulo.setFillColor(sf::Color(...))
       Color de adentro.
   rectangulo.setOutlineThickness(1.f)
   rectangulo.setOutlineColor(sf::Color(...))
       Borde alrededor, de ese grosor y color. El borde se dibuja POR FUERA del rectángulo.
-      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarBarra, dibujarMana, dibujarFinDePartida)
+      -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarPanel, dibujarSeparador, dibujarBarra,
+         dibujarMana, dibujarCartel)
 
   sf::Clock reloj
   reloj.restart()
@@ -355,17 +392,23 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
       camino de los enemigos vuelve para atrás hasta llegar a la casilla de inicio.
       -> Juego.cpp (pasoHacia)
 
-  sf::IntRect    un rectángulo con enteros: (x, y, ancho, alto). Elige un pedazo de una textura.
-      -> Proyectil.cpp (mostrar)
+  sf::IntRect    un rectángulo con enteros: (x, y, ancho, alto). Elige un pedazo de una textura, y es
+                 lo que devuelve window.getViewport().
+      -> Proyectil.cpp (mostrar), Mapa.cpp (mostrar), Juego.cpp (procesarEventos)
 
   sf::FloatRect  un rectángulo: .left, .top (esquina de arriba a la izquierda), .width, .height
-      Lo devuelven getLocalBounds() y getGlobalBounds(), y se usa para crear una sf::View.
+      Lo devuelven getLocalBounds() y getGlobalBounds(), y se usa para crear una sf::View y para
+      su viewport.
       -> Mapa.cpp, Personaje.cpp, Menu.cpp
 
   rectangulo.contains(punto)
       Devuelve true si el punto (sf::Vector2f) cae adentro del rectángulo.
       El menú lo usa para saber si el mouse está sobre una opción.
       -> Menu.cpp (procesarEvento)
+
+  rectanguloInt.contains(x, y)
+      Lo mismo con un sf::IntRect y dos enteros: si el click cayó adentro del viewport del tablero.
+      -> Juego.cpp (procesarEventos)
 
   sf::Color(rojo, verde, azul)
       Un color, cada parte de 0 a 255. Un cuarto número opcional es la transparencia (alfa):

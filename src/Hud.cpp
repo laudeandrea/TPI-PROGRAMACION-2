@@ -14,11 +14,20 @@ static const sf::Color PELIGRO(176, 74, 74);
 static const sf::Color PELIGRO_CLARO(232, 120, 110);
 
 
-// Medidas del HUD de abajo a la izquierda (ahi no esta el tablero)
-static const float X = 32.f;
-static const float X_BARRA = X + 88.f;       // todas las barras empiezan en la misma x, despues del titulo mas largo ("Codice")
-static const float Y_VIDA = 548.f, Y_CODICE = 580.f, Y_MANA = 612.f, Y_AYUDA = 638.f;
-static const float ANCHO_PUNTO = 16.f, ALTO_PUNTO = 12.f, SEPARACION = 3.f;
+// Medidas del panel de la derecha. Empieza donde termina el tablero (el 75 % de la ventana, ver Camara)
+static const float X_PANEL = 960.f, ANCHO_PANEL = 320.f;
+static const float X = X_PANEL + 24.f;                     // margen izquierdo del contenido
+static const float X_DERECHA = X_PANEL + ANCHO_PANEL - 24.f; // donde termina el contenido (margen derecho)
+static const float ANCHO_PUNTO = 24.f, ALTO_PUNTO = 12.f, SEPARACION = 3.f;
+static const float ANCHO_BARRA = 10 * (ANCHO_PUNTO + SEPARACION) - SEPARACION; // lo mismo que 10 puntos de mana
+static const float ALTO_LINEA = 30.f;                      // entre una linea de texto y la siguiente
+
+// De arriba hacia abajo (cada parte separada por una linea)
+static const float Y_NIVEL = 24.f;
+static const float Y_VIDA = 84.f, Y_CODICE = 144.f, Y_MANA = 204.f; // el titulo; la barra va 32 px mas abajo
+static const float Y_HABILIDADES = 284.f;
+static const float Y_AYUDA = 456.f;
+static const float Y_MENU = 676.f;
 
 Hud::Hud() {
 	fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf");
@@ -36,6 +45,13 @@ sf::Text Hud::crearTexto(const std::string& contenido, unsigned int tamanio, sf:
 	texto.setOutlineThickness(2.f);
 	texto.setOutlineColor(FONDO);
 	return texto;
+}
+
+void Hud::dibujarTextoDerecha(sf::RenderWindow& ventana, sf::Text texto, float xDerecha, float y) const {
+	// getLocalBounds: el tamanio del texto. Se corre a la izquierda todo su ancho, asi termina en xDerecha
+	sf::FloatRect caja = texto.getLocalBounds();
+	texto.setPosition(std::floor(xDerecha - caja.left - caja.width), y);
+	ventana.draw(texto);
 }
 
 void Hud::agregarDanio(sf::Vector2f posicionMundo, int cantidad) {
@@ -59,44 +75,75 @@ void Hud::dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const 
 	const Pergamino& codice, const Nivel& nivel, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
 	ventana.setView(ventana.getDefaultView());
 	dibujarNumeros(ventana, vistaCamara);
+	dibujarPanel(ventana);
 
-	// Arriba a la izquierda: en que oleada estamos
+	// Arriba: en que nivel y en que oleada estamos
+	sf::Text textoNivel = crearTexto("Nivel " + std::to_string(nivel.getNumero()) + "/" + std::to_string(nivel.getCantNiveles()), 22, GEMA);
+	textoNivel.setPosition(X, Y_NIVEL);
+	ventana.draw(textoNivel);
 	sf::Text oleada = crearTexto("Oleada " + std::to_string(nivel.getOleada()) + "/" + std::to_string(nivel.getCantOleadas()), 22, PIEDRA);
-	oleada.setPosition(X, 24.f);
-	ventana.draw(oleada);
+	dibujarTextoDerecha(ventana, oleada, X_DERECHA, Y_NIVEL);
+	dibujarSeparador(ventana, Y_NIVEL + 40.f);
 
-	// Abajo a la izquierda: vida del mago, vida del codice, mana y la ayuda
+	// Vida del mago, vida del codice y mana
 	dibujarBarra(ventana, Y_VIDA, "Vida", mago.getVida(), mago.getVidaMaxima(), PELIGRO);
 	dibujarBarra(ventana, Y_CODICE, "Codice", codice.getVida(), codice.getVidaMaxima(), PELIGRO);
 	dibujarMana(ventana, mago, habilidadPreparada);
+	dibujarSeparador(ventana, Y_HABILIDADES - 16.f);
+
+	dibujarHabilidades(ventana, mago, habilidadPreparada);
+	dibujarSeparador(ventana, Y_AYUDA - 16.f);
+
 	dibujarAyuda(ventana, mago, habilidadPreparada, magoSeleccionado);
+
+	// Abajo de todo, como volver al menu (Tenue: es secundario)
+	sf::Text menu = crearTexto("[Esc] Menu", 22, TENUE);
+	menu.setPosition(X, Y_MENU);
+	ventana.draw(menu);
+}
+
+void Hud::dibujarPanel(sf::RenderWindow& ventana) const {
+	// Fondo casi opaco: el fondo del juego se adivina apenas atras
+	sf::RectangleShape panel(sf::Vector2f(ANCHO_PANEL, 720.f));
+	panel.setPosition(X_PANEL, 0.f);
+	panel.setFillColor(sf::Color(FONDO.r, FONDO.g, FONDO.b, 235));
+	ventana.draw(panel);
+
+	// Borde de la izquierda, para separarlo del tablero
+	sf::RectangleShape borde(sf::Vector2f(2.f, 720.f));
+	borde.setPosition(X_PANEL, 0.f);
+	borde.setFillColor(PIZARRA);
+	ventana.draw(borde);
+}
+
+void Hud::dibujarSeparador(sf::RenderWindow& ventana, float y) const {
+	sf::RectangleShape linea(sf::Vector2f(X_DERECHA - X, 2.f));
+	linea.setPosition(X, y);
+	linea.setFillColor(PIZARRA);
+	ventana.draw(linea);
 }
 
 void Hud::dibujarBarra(sf::RenderWindow& ventana, float y, const std::string& titulo,
 	int actual, int maximo, sf::Color color) const {
-	// Mismo ancho que la barra de mana (10 puntos), asi quedan alineadas
-	const float ANCHO = 10 * (ANCHO_PUNTO + SEPARACION) - SEPARACION;
-
+	// Arriba: el titulo a la izquierda y "actual/maximo" a la derecha
 	sf::Text textoTitulo = crearTexto(titulo, 22, PIEDRA);
-	textoTitulo.setPosition(X, y - 6.f);
+	textoTitulo.setPosition(X, y);
 	ventana.draw(textoTitulo);
+	dibujarTextoDerecha(ventana, crearTexto(std::to_string(actual) + "/" + std::to_string(maximo), 22, PELIGRO_CLARO), X_DERECHA, y);
 
-	// Fondo vacio y, arriba, el relleno proporcional a lo que queda (igual que las barras de vida de los enemigos)
-	sf::RectangleShape fondo(sf::Vector2f(ANCHO, ALTO_PUNTO));
-	fondo.setPosition(X_BARRA, y);
+	// Abajo: fondo vacio y, arriba, el relleno proporcional a lo que queda (igual que las barras de vida de los enemigos)
+	float yBarra = y + 32.f;
+	sf::RectangleShape fondo(sf::Vector2f(ANCHO_BARRA, ALTO_PUNTO));
+	fondo.setPosition(X, yBarra);
 	fondo.setFillColor(PIZARRA);
 	fondo.setOutlineThickness(2.f);
 	fondo.setOutlineColor(FONDO);
 	ventana.draw(fondo);
 
-	sf::RectangleShape relleno(sf::Vector2f(ANCHO * actual / maximo, ALTO_PUNTO));
-	relleno.setPosition(X_BARRA, y);
+	sf::RectangleShape relleno(sf::Vector2f(ANCHO_BARRA * actual / maximo, ALTO_PUNTO));
+	relleno.setPosition(X, yBarra);
 	relleno.setFillColor(color);
 	ventana.draw(relleno);
-
-	sf::Text numero = crearTexto(std::to_string(actual) + "/" + std::to_string(maximo), 22, PELIGRO_CLARO);
-	numero.setPosition(X_BARRA + ANCHO + 8.f, y - 6.f);
-	ventana.draw(numero);
 }
 
 void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const {
@@ -106,15 +153,16 @@ void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSele
 		costo = mago.getHabilidad(habilidadPreparada).getCostoMana();
 	}
 
-	// Titulo
+	// Titulo y numero: "Mana ... 8/10"
 	sf::Text titulo = crearTexto("Mana", 22, PIEDRA);
-	titulo.setPosition(X, Y_MANA - 6.f);
+	titulo.setPosition(X, Y_MANA);
 	ventana.draw(titulo);
+	dibujarTextoDerecha(ventana, crearTexto(std::to_string(mago.getMana()) + "/" + std::to_string(mago.getManaMaximo()), 22, GEMA), X_DERECHA, Y_MANA);
 
 	// Barra de puntos: un rectangulito por cada punto de mana
 	for (int i = 0; i < mago.getManaMaximo(); i++) {
 		sf::RectangleShape punto(sf::Vector2f(ANCHO_PUNTO, ALTO_PUNTO));
-		punto.setPosition(X_BARRA + i * (ANCHO_PUNTO + SEPARACION), Y_MANA);
+		punto.setPosition(X + i * (ANCHO_PUNTO + SEPARACION), Y_MANA + 32.f);
 		punto.setOutlineThickness(2.f);
 		punto.setOutlineColor(FONDO);
 
@@ -133,52 +181,67 @@ void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSele
 		}
 		ventana.draw(punto);
 	}
-
-	// Numero: "8/10"
-	float xNumero = X_BARRA + mago.getManaMaximo() * (ANCHO_PUNTO + SEPARACION) + 8.f;
-	sf::Text numero = crearTexto(std::to_string(mago.getMana()) + "/" + std::to_string(mago.getManaMaximo()), 22, GEMA);
-	numero.setPosition(xNumero, Y_MANA - 6.f);
-	ventana.draw(numero);
 }
 
-void Hud::dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
-	// Con el mago seleccionado, la ayuda explica como moverse
-	if (magoSeleccionado) {
-		sf::Text texto = crearTexto("Click en una casilla marcada para moverte", 22, PIEDRA);
-		texto.setPosition(X, Y_AYUDA);
-		ventana.draw(texto);
-		return;
-	}
+void Hud::dibujarHabilidades(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const {
+	// Encabezado: "Habilidades ... Mana" (la columna de la derecha es lo que cuesta cada una)
+	sf::Text titulo = crearTexto("Habilidades", 22, TENUE);
+	titulo.setPosition(X, Y_HABILIDADES);
+	ventana.draw(titulo);
+	dibujarTextoDerecha(ventana, crearTexto("Mana", 22, TENUE), X_DERECHA, Y_HABILIDADES);
 
-	// Con una habilidad preparada, explica como tirarla y como cancelarla
-	// La tecla es el numero del enum: 1 = bola, 2 = empuje
-	if (habilidadPreparada != HabilidadSeleccionada::NINGUNA) {
-		std::string tecla = std::to_string(static_cast<int>(habilidadPreparada));
-		sf::Text texto = crearTexto("Click en un enemigo marcado  -  [" + tecla + "] cancela", 22, GEMA);
-		texto.setPosition(X, Y_AYUDA);
-		ventana.draw(texto);
-		return;
-	}
-
-	// Si no, la lista de habilidades una al lado de la otra: "[1] Bola de energia (2)".
-	// Las que no alcanza el mana van en Tenue
-	float x = X;
+	// Una por linea: "[1] Bola de energia ... 2". La preparada va en Gema; las que no alcanza el mana, en Tenue
+	float y = Y_HABILIDADES + ALTO_LINEA + 4.f;
 	for (int i = 1; i <= mago.getCantidadHabilidades(); i++) {
-		const Habilidad& habilidad = mago.getHabilidad(HabilidadSeleccionada(i));
-		bool alcanza = mago.getMana() >= habilidad.getCostoMana();
+		HabilidadSeleccionada cual = HabilidadSeleccionada(i);
+		const Habilidad& habilidad = mago.getHabilidad(cual);
 
-		std::string contenido = "[" + std::to_string(i) + "] " + habilidad.getNombre() + " (" + std::to_string(habilidad.getCostoMana()) + ")";
-		sf::Text texto = crearTexto(contenido, 22, alcanza ? PIEDRA : TENUE);
-		texto.setPosition(x, Y_AYUDA);
-		ventana.draw(texto);
+		sf::Color color = PIEDRA;
+		if (cual == habilidadPreparada) {
+			color = GEMA;
+		}
+		else if (mago.getMana() < habilidad.getCostoMana()) {
+			color = TENUE;
+		}
 
-		x += texto.getLocalBounds().width + 24.f; // la proxima va a la derecha, con un espacio
+		sf::Text nombre = crearTexto("[" + std::to_string(i) + "] " + habilidad.getNombre(), 22, color);
+		nombre.setPosition(X, y);
+		ventana.draw(nombre);
+		dibujarTextoDerecha(ventana, crearTexto(std::to_string(habilidad.getCostoMana()), 22, color), X_DERECHA, y);
+		y += ALTO_LINEA;
 	}
 
 	// Al final, como pasar el turno (Tenue: es secundario)
 	sf::Text pasar = crearTexto("[Espacio] Pasar turno", 22, TENUE);
-	pasar.setPosition(x, Y_AYUDA);
+	pasar.setPosition(X, y + 6.f);
 	ventana.draw(pasar);
+}
+
+void Hud::dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
+	// El panel es angosto: los textos largos se cortan en renglones con '\n'
+	std::string contenido = "Click en el mago\npara moverlo";
+	sf::Color color = TENUE;
+
+	if (magoSeleccionado) {
+		contenido = "Click en una casilla\nmarcada para moverte";
+		color = PIEDRA;
+	}
+	else if (habilidadPreparada != HabilidadSeleccionada::NINGUNA) {
+		// La tecla es el numero del enum: 1 = bola, 2 = empuje, 3 = muro
+		std::string tecla = std::to_string(static_cast<int>(habilidadPreparada));
+		if (mago.getHabilidad(habilidadPreparada).getTipo() == TipoHabilidad::MURO) {
+			contenido = "Pasa el mouse por una\ncasilla marcada y\nclick para prender\nel fuego\n[" + tecla + "] cancela";
+		}
+		else {
+			contenido = "Click en un enemigo\nmarcado\n[" + tecla + "] cancela";
+		}
+		color = GEMA;
+	}
+
+	sf::Text texto = crearTexto(contenido, 22, color);
+	texto.setLineSpacing(1.2f);
+	texto.setPosition(X, Y_AYUDA);
+	ventana.draw(texto);
 }
 
 void Hud::dibujarNumeros(sf::RenderWindow& ventana, const sf::View& vistaCamara) const {
@@ -210,6 +273,20 @@ void Hud::dibujarNumeros(sf::RenderWindow& ventana, const sf::View& vistaCamara)
 }
 
 void Hud::dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::string& motivo) const {
+	if (gano) {
+		dibujarCartel(ventana, "VICTORIA", GEMA, motivo, "Enter para volver al menu");
+	}
+	else {
+		dibujarCartel(ventana, "DERROTA", PELIGRO_CLARO, motivo, "Enter para volver al menu");
+	}
+}
+
+void Hud::dibujarNivelSuperado(sf::RenderWindow& ventana, const std::string& aviso) const {
+	dibujarCartel(ventana, "NIVEL SUPERADO", GEMA, aviso, "Enter para seguir");
+}
+
+void Hud::dibujarCartel(sf::RenderWindow& ventana, const std::string& titulo, sf::Color colorTitulo,
+	const std::string& detalle, const std::string& instruccion) const {
 	ventana.setView(ventana.getDefaultView());
 
 	// Oscurece todo lo de atras (el tablero se sigue viendo, apagado)
@@ -225,13 +302,11 @@ void Hud::dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::s
 	panel.setOutlineColor(PIZARRA);
 	ventana.draw(panel);
 
-	// Tres lineas centradas en x = 640: titulo, motivo y que hacer
-	std::string titulo = gano ? "VICTORIA" : "DERROTA";
-	sf::Color colorTitulo = gano ? GEMA : PELIGRO_CLARO;
+	// Tres lineas centradas en x = 640: titulo, detalle y que hacer
 	sf::Text textos[3] = {
 		crearTexto(titulo, 22, colorTitulo),
-		crearTexto(motivo, 22, PIEDRA),
-		crearTexto("Enter para volver al menu", 22, TENUE)
+		crearTexto(detalle, 22, PIEDRA),
+		crearTexto(instruccion, 22, TENUE)
 	};
 	// El titulo se agranda x2 con setScale (y no con tamanio 44): asi los pixeles de la letra se duplican y sigue nitida
 	textos[0].setScale(2.f, 2.f);

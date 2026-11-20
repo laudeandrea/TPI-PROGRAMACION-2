@@ -7,8 +7,9 @@
 // porque no tienen constructor sin parametros
 Juego::Juego()
 	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El Codice Del Mago"),
-	  mago(FILA_MAGO, COLUMNA_MAGO),
-	  codice(FILA_CODICE, COLUMNA_CODICE, TipoHabilidad::BOLADEENERGIA),
+	  // El mago y el codice se crean en cualquier casilla: empezarNivel(1), al final, los pone donde dice el nivel
+	  mago(0, 0),
+	  codice(0, 0, TipoHabilidad::BOLADEENERGIA),
 	  nivel(1),
 	  camara(mapa.getTamanioMundo(), MARGEN_CAMARA),
 	  estado(EstadoJuego::MENU),
@@ -17,9 +18,6 @@ Juego::Juego()
 	  magoSeleccionado(false),
 	  enemigoEmpujado(nullptr)
 {
-	// La casilla donde se encuentra el codice (pergamino) queda ocupada, no puede ser pisada.
-	mapa.setTipoTerreno(codice.getFila(),codice.getColumna(),TipoTerreno::SUELO_OCUPADO);
-
 	//Inicialización de la ventana
 	window.setFramerateLimit(60);
 
@@ -43,7 +41,7 @@ Juego::Juego()
 	// Camara: encuadra el tablero y lo estira para llenar la ventana
 	camara.ajustarAVentana(window.getSize());
 
-	empezarOleada();
+	empezarNivel(1);
 };
 
 void Juego::ejecutar() {
@@ -84,6 +82,16 @@ void Juego::procesarEventos() {
 			}
 			// opcion 1 ("Como jugar"): todavia no hay pantalla, no hace nada
 		}
+		else if (estado == EstadoJuego::NIVEL_SUPERADO) {
+			// Cartel de nivel superado: Enter pasa al proximo nivel, Escape vuelve al menu
+			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
+				empezarNivel(nivel.getNumero() + 1);
+				estado = EstadoJuego::JUGANDO;
+			}
+			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+				estado = EstadoJuego::MENU;
+			}
+		}
 		else if (estado == EstadoJuego::GANASTE || estado == EstadoJuego::PERDISTE) {
 			// Cartel de fin de partida: Enter o Escape vuelven al menu
 			if (event.type == sf::Event::KeyPressed
@@ -100,7 +108,9 @@ void Juego::procesarEventos() {
 			}
 
 			// Click izquierdo: si hay una habilidad preparada la usa, si no mueve al mago
-			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left){
+			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left
+				// Solo los clicks sobre el tablero: los del panel del HUD (a la derecha) no cuentan
+				&& window.getViewport(camara.getVista()).contains(event.mouseButton.x, event.mouseButton.y)){
 				sf::Vector2i pixel(event.mouseButton.x, event.mouseButton.y);
 				// Con la vista de la camara: la que queda puesta en la ventana es la del HUD (la ultima que se dibujo)
 				sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel, camara.getVista());
@@ -128,18 +138,18 @@ void Juego::procesarEventos() {
 				}
 			}
 
-			// Habilidades del mago: 1 la bola, 2 el empuje (idea de Santiago: reemplazan a la Q).
+			// Habilidades del mago: 1 la bola, 2 el empuje (idea de Santiago: reemplazan a la Q), 3 el muro de fuego.
 			// Si se apreta la misma otra vez, se cancela. Solo en el turno del jugador
 			if (event.type == sf::Event::KeyPressed && fase == FaseTurno::JUGADOR) {
-				HabilidadSeleccionada elegida = HabilidadSeleccionada::NINGUNA;
-				if (event.key.code == sf::Keyboard::Num1 || event.key.code == sf::Keyboard::Numpad1) {
-					elegida = HabilidadSeleccionada::BOLA_DE_ENERGIA;
-				}
-				if (event.key.code == sf::Keyboard::Num2 || event.key.code == sf::Keyboard::Numpad2) {
-					elegida = HabilidadSeleccionada::EMPUJE;
-				}
+				// Que numero se apreto (0 = ninguno)
+				int numero = 0;
+				if (event.key.code == sf::Keyboard::Num1 || event.key.code == sf::Keyboard::Numpad1) numero = 1;
+				if (event.key.code == sf::Keyboard::Num2 || event.key.code == sf::Keyboard::Numpad2) numero = 2;
+				if (event.key.code == sf::Keyboard::Num3 || event.key.code == sf::Keyboard::Numpad3) numero = 3;
 
-				if (elegida != HabilidadSeleccionada::NINGUNA) {
+				// El numero es el valor del enum: 1 = bola, 2 = empuje, 3 = muro. Si todavia no la aprendio, no hace nada
+				HabilidadSeleccionada elegida = HabilidadSeleccionada(numero);
+				if (elegida != HabilidadSeleccionada::NINGUNA && mago.tieneHabilidad(elegida)) {
 					// apretar la misma tecla dos veces cancela
 					habilidadPreparada = (habilidadPreparada == elegida)
 						? HabilidadSeleccionada::NINGUNA : elegida;
@@ -233,7 +243,15 @@ void Juego::dibujar() {
 		// HUD: fijo en la pantalla (cambia a la vista por defecto)
 		hud.dibujar(window, camara.getVista(), mago, codice, nivel, habilidadPreparada, magoSeleccionado);
 
-		// Cartel de fin de partida: arriba de todo, con el tablero oscurecido atras
+		// Carteles: arriba de todo, con el tablero oscurecido atras
+		if (estado == EstadoJuego::NIVEL_SUPERADO) {
+			// Si en el proximo nivel aprende el muro, se avisa (sin tildes: SFML no las muestra bien)
+			std::string aviso = "Preparate para el nivel " + std::to_string(nivel.getNumero() + 1);
+			if (nivel.getNumero() + 1 == NIVEL_MURO) {
+				aviso = "Aprendiste el muro de fuego [3]";
+			}
+			hud.dibujarNivelSuperado(window, aviso);
+		}
 		if (estado == EstadoJuego::GANASTE) {
 			hud.dibujarFinDePartida(window, true, "Sobreviviste a todas las oleadas");
 		}
@@ -251,7 +269,9 @@ void Juego::dibujar() {
 };
 
 void Juego::dibujarAlcance() {
-	int alcance = mago.getHabilidad(habilidadPreparada).getAlcance();
+	const Habilidad& habilidad = mago.getHabilidad(habilidadPreparada);
+	int alcance = habilidad.getAlcance();
+	bool esMuro = habilidad.getTipo() == TipoHabilidad::MURO;
 
 	// Recorre el cuadrado alrededor del mago y se queda con las casillas a distancia 1..alcance
 	for (int fila = mago.getFila() - alcance; fila <= mago.getFila() + alcance; fila++) {
@@ -259,6 +279,14 @@ void Juego::dibujarAlcance() {
 			int distancia = distanciaAlMago(fila, columna);
 			if (distancia == 0 || distancia > alcance || !mapa.estaDentro(fila, columna)) {
 				continue; // continue = saltea esta casilla y sigue con la proxima
+			}
+
+			// El muro va en casillas vacias: se marcan solo esas
+			if (esMuro) {
+				if (casillaLibreParaMuro(fila, columna)) {
+					dibujarMarcador(texturaAlcance, fila, columna);
+				}
+				continue;
 			}
 
 			if (buscarEnemigoEn(fila, columna) != nullptr) {
@@ -270,6 +298,23 @@ void Juego::dibujarAlcance() {
 			// en el abismo vacio no se marca nada: no hay piso
 		}
 	}
+
+	// Muro: con el mouse arriba de una casilla valida, se ve en rojo donde quedarian las 3 casillas de fuego
+	if (esMuro) {
+		sf::Vector2i casilla = casillaBajoElMouse(); // x = columna, y = fila
+		if (sePuedePonerMuro(casilla.y, casilla.x)) {
+			for (const sf::Vector2i& fuego : casillasDelMuro(casilla.y, casilla.x)) {
+				dibujarMarcador(texturaObjetivo, fuego.y, fuego.x);
+			}
+		}
+	}
+}
+
+sf::Vector2i Juego::casillaBajoElMouse() const {
+	// Igual que con el click: pixel de la ventana -> punto del mundo (con la vista de la camara) -> casilla
+	sf::Vector2i pixel = sf::Mouse::getPosition(window);
+	sf::Vector2f posicionMundo = window.mapPixelToCoords(pixel, camara.getVista());
+	return mapa.mundoAcasilla(posicionMundo);
 }
 
 void Juego::dibujarMovimiento() {
@@ -389,7 +434,8 @@ sf::Vector2i Juego::pasoHacia(const Enemigo& enemigo, int filaObjetivo, int colu
 }
 
 void Juego::actualizar(float dt) {
-	hud.actualizar(dt); // los numeros de danio se animan siempre
+	hud.actualizar(dt);  // los numeros de danio se animan siempre
+	mapa.actualizar(dt); // y el fuego de los muros tambien
 
 	// Las casillas rojas de los golpes tambien se animan siempre, y se borran cuando terminan
 	for (Explosion& explosion : explosiones) {
@@ -422,10 +468,26 @@ void Juego::actualizar(float dt) {
 // ---------------------------------------------------------------- Partida
 
 void Juego::reiniciarPartida() {
+	empezarNivel(1);
+}
+
+void Juego::empezarNivel(int numero) {
+	nivel = Nivel(numero);
+
+	// El tablero nuevo pisa al anterior (y con el, los muros de fuego que hubieran quedado)
+	mapa.cargar(nivel.getDisenio());
+	muros.clear();
+
 	// Se crean de nuevo y se copian encima de los viejos (asi vuelven con la vida y el mana llenos)
-	mago = Mago(FILA_MAGO, COLUMNA_MAGO);
-	codice = Pergamino(FILA_CODICE, COLUMNA_CODICE, TipoHabilidad::BOLADEENERGIA);
-	nivel = Nivel(1);
+	codice = Pergamino(nivel.getFilaCodice(), nivel.getColumnaCodice(), TipoHabilidad::BOLADEENERGIA);
+	// La casilla donde se encuentra el codice queda ocupada, no puede ser pisada
+	mapa.setTipoTerreno(codice.getFila(), codice.getColumna(), TipoTerreno::SUELO_OCUPADO);
+
+	mago = Mago(nivel.getFilaMago(), nivel.getColumnaMago());
+	if (numero >= NIVEL_MURO) {
+		// Va tercera porque es la tecla 3 (ver HabilidadSeleccionada). No hace danio: frena a los enemigos
+		mago.aprenderHabilidad(Habilidad(TipoHabilidad::MURO, "Muro de fuego", 0, COSTO_MURO, ALCANCE_MURO));
+	}
 
 	enemigos.clear();
 	proyectiles.clear();
@@ -442,9 +504,9 @@ void Juego::reiniciarPartida() {
 
 void Juego::empezarOleada() {
 	for (auto& enemigo : nivel.crearOleada()) {
-		// Si su casilla de salida esta ocupada (por ejemplo, el mago esta parado ahi),
+		// Si no puede quedarse en su casilla de salida (por ejemplo, el mago esta parado ahi o hay fuego),
 		// lo pone en la casilla libre mas cercana. casillasAlcanzables las devuelve de la mas cercana a la mas lejana
-		if (casillaOcupada(enemigo->getFila(), enemigo->getColumna())) {
+		if (!puedeMover(*enemigo, enemigo->getFila(), enemigo->getColumna())) {
 			std::vector<sf::Vector2i> libres = casillasAlcanzables(*enemigo, 3);
 			if (libres.empty()) continue; // no hay lugar: esta oleada viene con uno menos
 			enemigo->mover(libres[0].y, libres[0].x);
@@ -475,7 +537,10 @@ void Juego::revisarFinDePartida() {
 			magoSeleccionado = false;
 		}
 		else {
-			estado = EstadoJuego::GANASTE;
+			// Se gano el nivel: si hay otro, cartel para seguir (el nivel nuevo lo arma Enter, ver procesarEventos)
+			estado = nivel.hayOtroNivel() ? EstadoJuego::NIVEL_SUPERADO : EstadoJuego::GANASTE;
+			habilidadPreparada = HabilidadSeleccionada::NINGUNA;
+			magoSeleccionado = false;
 		}
 	}
 }
@@ -483,11 +548,29 @@ void Juego::revisarFinDePartida() {
 // ---------------------------------------------------------------- Turno del jugador
 
 void Juego::usarHabilidad(int fila, int columna) {
+	if (fase != FaseTurno::JUGADOR) {
+		return;
+	}
 	const Habilidad& habilidad = mago.getHabilidad(habilidadPreparada);
+
+	// El muro es distinto a las otras: va en una casilla VACIA, no sobre un enemigo
+	if (habilidad.getTipo() == TipoHabilidad::MURO) {
+		if (!sePuedePonerMuro(fila, columna)) {
+			return;
+		}
+		if (!mago.gastarMana(habilidad.getCostoMana())) {
+			return;
+		}
+		ponerMuro(fila, columna);
+		habilidadPreparada = HabilidadSeleccionada::NINGUNA;
+		terminarTurnoJugador(); // es instantaneo, como el empuje
+		return;
+	}
+
+	// Bola y empuje: necesitan un enemigo al alcance
 	Enemigo* objetivo = buscarEnemigoEn(fila, columna);
 	int distancia = distanciaAlMago(fila, columna);
-
-	if (fase != FaseTurno::JUGADOR || objetivo == nullptr || distancia > habilidad.getAlcance()) {
+	if (objetivo == nullptr || distancia > habilidad.getAlcance()) {
 		return;
 	}
 
@@ -555,6 +638,10 @@ void Juego::empujar(Enemigo& enemigo, int danio) {
 		return;
 	}
 
+	// Si lo empujaron al fuego (solo puede pasarle al espectro), se quema
+	quemarSiEstaEnFuego(enemigo);
+	if (!enemigo.estaVivo()) return;
+
 	// Quedo aturdido por el golpe: este turno no hace nada (idea de Santiago)
 	enemigoEmpujado = &enemigo;
 }
@@ -563,6 +650,75 @@ void Juego::terminarTurnoJugador() {
 	sacarMuertos();
 	fase = FaseTurno::ENEMIGOS;
 	revisarFinDePartida(); // si se mato al ultimo, aparece la proxima oleada (o se gana)
+}
+
+// ---------------------------------------------------------------- Muro de fuego
+
+bool Juego::casillaLibreParaMuro(int fila, int columna) const {
+	// Solo suelo comun: no en el abismo, ni en una columna, ni en el codice (SUELO_OCUPADO), ni encima de otro fuego
+	return mapa.estaDentro(fila, columna)
+		&& mapa.getTipoTerreno(fila, columna) == TipoTerreno::SUELO
+		&& !casillaOcupada(fila, columna);
+}
+
+bool Juego::sePuedePonerMuro(int fila, int columna) const {
+	int alcance = mago.getHabilidad(HabilidadSeleccionada::MURO).getAlcance();
+	int distancia = distanciaAlMago(fila, columna);
+	return distancia >= 1 && distancia <= alcance && casillaLibreParaMuro(fila, columna);
+}
+
+std::vector<sf::Vector2i> Juego::casillasDelMuro(int fila, int columna) const {
+	// Hacia que lado mira el mago: si la casilla esta mas lejos en filas que en columnas, el mago "mira" a lo
+	// largo de las filas, y el muro se arma de costado (a lo largo de las columnas). Y al reves.
+	// Ejemplo: mago en (4,1), click en (4,3) -> el muro queda en (3,3), (4,3) y (5,3)
+	int distanciaFilas = std::abs(fila - mago.getFila());
+	int distanciaColumnas = std::abs(columna - mago.getColumna());
+
+	sf::Vector2i costado; // x = columna, y = fila
+	if (distanciaFilas >= distanciaColumnas) {
+		costado = sf::Vector2i(1, 0); // las vecinas son la de la izquierda y la de la derecha (otra columna)
+	}
+	else {
+		costado = sf::Vector2i(0, 1); // las vecinas son la de arriba y la de abajo (otra fila)
+	}
+
+	sf::Vector2i centro(columna, fila);
+	sf::Vector2i candidatas[3] = { centro - costado, centro, centro + costado };
+
+	std::vector<sf::Vector2i> casillas;
+	for (const sf::Vector2i& casilla : candidatas) {
+		if (casillaLibreParaMuro(casilla.y, casilla.x)) {
+			casillas.push_back(casilla);
+		}
+	}
+	return casillas;
+}
+
+void Juego::ponerMuro(int fila, int columna) {
+	for (const sf::Vector2i& casilla : casillasDelMuro(fila, columna)) {
+		mapa.setTipoTerreno(casilla.y, casilla.x, TipoTerreno::MURO);
+		muros.push_back({ casilla.y, casilla.x, TURNOS_MURO });
+	}
+}
+
+void Juego::apagarMuros() {
+	for (Muro& muro : muros) {
+		muro.turnosRestantes--;
+		if (muro.turnosRestantes <= 0) {
+			mapa.setTipoTerreno(muro.fila, muro.columna, TipoTerreno::SUELO); // el fuego solo se pone sobre suelo
+		}
+	}
+	// Saca del vector los que se apagaron (mismo truco que con los enemigos muertos)
+	muros.erase(std::remove_if(muros.begin(), muros.end(),
+		[](const Muro& m) { return m.turnosRestantes <= 0; }), muros.end());
+}
+
+void Juego::quemarSiEstaEnFuego(Enemigo& enemigo) {
+	if (mapa.getTipoTerreno(enemigo.getFila(), enemigo.getColumna()) != TipoTerreno::MURO) {
+		return;
+	}
+	daniarCasilla(enemigo.getFila(), enemigo.getColumna(), DANIO_FUEGO);
+	explosiones.push_back({ enemigo.getFila(), enemigo.getColumna(), 0.f }); // la casilla se marca en rojo un momento
 }
 
 // ---------------------------------------------------------------- Turno de los enemigos
@@ -574,6 +730,10 @@ void Juego::turnoEnemigos() {
 		Enemigo& enemigo = *enemigos[i];
 		if (!enemigo.estaVivo()) continue;
 		if (&enemigo == enemigoEmpujado) continue; // lo empujaron: pierde este turno
+
+		// Si empieza su turno parado en el fuego, se vuelve a quemar (asi no le conviene quedarse ahi)
+		quemarSiEstaEnFuego(enemigo);
+		if (!enemigo.estaVivo()) continue;
 
 		// Va por lo que tenga mas cerca: el mago o el codice. Si estan igual de lejos, prefiere el codice
 		int distanciaMago = distancia(enemigo.getFila(), enemigo.getColumna(), mago.getFila(), mago.getColumna());
@@ -611,6 +771,8 @@ void Juego::turnoEnemigos() {
 			bool quiereMoverse = !enemigo.estaEn(destino.y, destino.x);
 			if (quiereMoverse && puedeMover(enemigo, destino.y, destino.x)) {
 				enemigo.mover(destino.y, destino.x);
+				// El espectro puede cruzar el muro de fuego, pero se quema al entrar
+				quemarSiEstaEnFuego(enemigo);
 			}
 		}
 	}
@@ -629,6 +791,7 @@ void Juego::turnoEnemigos() {
 void Juego::empezarTurnoJugador() {
 	fase = FaseTurno::JUGADOR;
 	mago.recuperarMana(MANA_POR_TURNO); // empieza el turno del jugador: recupera un poco de mana
+	apagarMuros();                      // y al fuego le queda un turno menos
 	revisarFinDePartida();
 }
 

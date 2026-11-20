@@ -8,7 +8,7 @@ class Espectro : public Enemigo {
 		static const int ALCANCE_ATAQUE = 3;
 	public:
 		Espectro(int _fila, int _columna);
-		// Es fantasma: atraviesa columnas rotas y vuela sobre el abismo.
+		// Es fantasma: atraviesa columnas rotas y el muro de fuego (quemandose) y vuela sobre el abismo.
 		bool puedePisar(TipoTerreno terreno) const override;
 		// Ataca de lejos: no necesita estar pegado.
 		int getAlcanceAtaque() const override;

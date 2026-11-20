@@ -5,8 +5,8 @@
 #include "Pergamino.h"
 #include "Nivel.h"
 
-/* Lo que se dibuja fijo en la pantalla, arriba del tablero: la vida, el mana, la oleada, la ayuda
-*  de las habilidades y los numeros de danio que suben cuando se golpea a alguien.
+/* Lo que se dibuja fijo en la pantalla: el panel de la derecha (nivel, oleada, vida, mana, habilidades
+*  y la ayuda de que hacer), los numeros de danio que suben cuando se golpea a alguien y los carteles.
 *  Usa la vista por defecto de la ventana (1280x720), no la de la camara. */
 class Hud {
 	private:
@@ -23,14 +23,25 @@ class Hud {
 		sf::Font fuente;
 		std::vector<NumeroDanio> numeros;
 
-		// Una fila del HUD: titulo a la izquierda, barra y "actual/maximo" a la derecha
+		// El fondo del panel de la derecha y las lineas que separan sus partes.
+		void dibujarPanel(sf::RenderWindow& ventana) const;
+		void dibujarSeparador(sf::RenderWindow& ventana, float y) const;
+		// Titulo y "actual/maximo" en una linea, y abajo la barra
 		void dibujarBarra(sf::RenderWindow& ventana, float y, const std::string& titulo,
 			int actual, int maximo, sf::Color color) const;
 		void dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const;
+		// La lista de habilidades, una por linea, con su tecla y su costo.
+		void dibujarHabilidades(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const;
+		// Que hacer ahora (cambia si el mago esta seleccionado o hay una habilidad preparada).
 		void dibujarAyuda(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const;
 		void dibujarNumeros(sf::RenderWindow& ventana, const sf::View& vistaCamara) const;
+		// Oscurece la pantalla y muestra un panel en el medio con tres lineas: titulo (grande), detalle y que tecla apretar.
+		void dibujarCartel(sf::RenderWindow& ventana, const std::string& titulo, sf::Color colorTitulo,
+			const std::string& detalle, const std::string& instruccion) const;
 		// Crea un texto con la fuente y el estilo del juego.
 		sf::Text crearTexto(const std::string& contenido, unsigned int tamanio, sf::Color color) const;
+		// Lo mismo, pero alineado a la derecha del panel (termina en xDerecha).
+		void dibujarTextoDerecha(sf::RenderWindow& ventana, sf::Text texto, float xDerecha, float y) const;
 
 	public:
 		Hud();
@@ -43,6 +54,8 @@ class Hud {
 		// Dibuja todo. Cambia la vista de la ventana a la vista por defecto.
 		void dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const Mago& mago,
 			const Pergamino& codice, const Nivel& nivel, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const;
-		// Oscurece la pantalla y muestra si se gano o se perdio. Se llama despues de dibujar().
+		// Cartel de victoria o derrota. Se llama despues de dibujar().
 		void dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::string& motivo) const;
+		// Cartel entre un nivel y el siguiente. aviso: por ejemplo, la habilidad nueva que aprendio.
+		void dibujarNivelSuperado(sf::RenderWindow& ventana, const std::string& aviso) const;
 };

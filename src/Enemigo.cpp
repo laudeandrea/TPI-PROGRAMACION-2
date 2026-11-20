@@ -22,7 +22,7 @@ sf::Vector2i Enemigo::calcularPaso(const Mapa& mapa, int filaObjetivo, int colum
 
 	sf::Vector2i actual(columna, fila);   // (x = columna, y = fila)
 
-	if (puedeAtacar(filaObjetivo, columnaObjetivo)) return actual; // ya le llega, no se mueve
+	if (puedeAtacar(filaObjetivo, columnaObjetivo)) return actual; // ya lo alcanza, no se mueve
 
 	int pasoFila = 0, pasoColumna = 0;
 	if (dFila > 0) {

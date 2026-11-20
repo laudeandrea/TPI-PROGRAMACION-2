@@ -21,7 +21,12 @@ class Mago : public Personaje {
         bool gastarMana(int _cantidad);
         // Suma mana sin pasarse del maximo.
         void recuperarMana(int _cantidad);
+        // Hay que llamar antes a tieneHabilidad(): si no la aprendio, se sale del vector.
         const Habilidad& getHabilidad(HabilidadSeleccionada _habilidad) const;
         int getCantidadHabilidades() const;
+        // Si ya aprendio esa habilidad (el muro de fuego recien se aprende en el nivel 2).
+        bool tieneHabilidad(HabilidadSeleccionada _habilidad) const;
+        // Agrega una habilidad al final. Tiene que seguir el orden de HabilidadSeleccionada.
+        void aprenderHabilidad(const Habilidad& _habilidad);
 
 };

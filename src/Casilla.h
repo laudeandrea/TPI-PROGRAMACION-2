@@ -4,7 +4,8 @@ enum class TipoTerreno {
 	SUELO,
 	SUELO_OCUPADO,
 	COLUMNAROTA,
-	ABISMO
+	ABISMO,
+	MURO // muro de fuego del mago: dura unos turnos y despues vuelve a ser SUELO
 };
 
 class Casilla {

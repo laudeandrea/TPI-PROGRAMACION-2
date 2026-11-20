@@ -6,11 +6,12 @@
 enum class TipoHabilidad { BOLADEENERGIA, EMPUJE, MURO, PASO_ETEREO};
 
 /* Cual de las habilidades del mago esta en la mano.
- * Los valores coinciden con la tecla: 1 = bola, 2 = empuje. */
+ * Los valores coinciden con la tecla: 1 = bola, 2 = empuje, 3 = muro de fuego (se aprende en el nivel 2). */
 enum class HabilidadSeleccionada {
     NINGUNA,
     BOLA_DE_ENERGIA,
     EMPUJE,
+    MURO,
 };
 
 class Habilidad {

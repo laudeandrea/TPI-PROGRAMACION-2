@@ -3,25 +3,33 @@
 #include <cstdlib>
 #include <string> // std::to_string, para armar el nombre de cada archivo de suelo
 
-Mapa::Mapa() {
-	// Dibujo de la matriz del mapa con cada tipo de suelo
+// El constructor solo carga las imagenes (una vez). El tablero lo arma cargar(), que se llama al empezar cada nivel.
+// Mientras no se llame a cargar(), todas las casillas son SUELO (es el valor por defecto de Casilla).
+Mapa::Mapa() : tiempoFuego(0.f) {
+	// Variantes de suelo: suelo_1_iso.png ... suelo_4_iso.png (el numero del archivo es i + 1)
+	for (int i = 0; i < CANT_VARIANTES_SUELO; i++) {
+		texturasSuelo[i].loadFromFile("Imagenes/suelo_" + std::to_string(i + 1) + "_iso.png");
+	}
 
-	// 9 a pesar de el tablero ser de 8x8, es porque le dejamos espacio al caracter nulo '\0', sino da error el compilador
-	const char disenio[8][9] = {
+	texturaColumna.loadFromFile("Imagenes/columna_rota_iso.png");
+	texturaAbismo.loadFromFile("Imagenes/abismo_iso.png");
+	texturaMuro.loadFromFile("Imagenes/muro_fuego_animacion.png");
+	texturaParedIzquierda.loadFromFile("Imagenes/pared_izquierda_iso.png");
+	texturaParedDerecha.loadFromFile("Imagenes/pared_derecha_iso.png");
+	texturaPozoIzquierda.loadFromFile("Imagenes/pozo_izquierda_iso.png");
+	texturaPozoDerecha.loadFromFile("Imagenes/pozo_derecha_iso.png");
 
-	// S = suelo normal, C = columna rota, X = abismo
-	"SSSSSSSS",
-	"SSSSSSSS",
-	"SSCSXXSS",
-	"SSSSXXSS",
-	"SSSSSCSS",
-	"SSXXSSSS",
-	"SSXXSSCS",
-	"SSSSSSSS"
-};
+	for (int fila = 0; fila < CANT_CASILLAS; fila++) {
+		for (int columna = 0; columna < CANT_CASILLAS; columna++) {
+			variantesSuelo[fila][columna] = 0;
+		}
+	}
+}
 
-	for (int fila = 0;fila < 8;fila++) {
-		for (int columna = 0; columna < 8;columna++) {
+void Mapa::cargar(const std::vector<std::string>& disenio) {
+	// disenio[fila][columna]: con un vector de strings se indexa igual que con la matriz de char de antes
+	for (int fila = 0; fila < CANT_CASILLAS; fila++) {
+		for (int columna = 0; columna < CANT_CASILLAS; columna++) {
 			switch (disenio[fila][columna]) {
 
 			case 'C':
@@ -35,7 +43,7 @@ Mapa::Mapa() {
 				break;
 			}
 
-			// Sorteo del dibujo de suelo de esta casilla (una sola vez, por eso va en el constructor)
+			// Sorteo del dibujo de suelo de esta casilla (una sola vez por nivel: si se sorteara al dibujar, el piso titilaria)
 			int dado = std::rand() % 100; // numero de 0 a 99
 			if (dado < 60) {
 				variantesSuelo[fila][columna] = 0; // lisa (60 %)
@@ -48,19 +56,10 @@ Mapa::Mapa() {
 			}
 		}
 	}
+}
 
-	// Variantes de suelo: suelo_1_iso.png ... suelo_4_iso.png (el numero del archivo es i + 1)
-	for (int i = 0; i < CANT_VARIANTES_SUELO; i++) {
-		texturasSuelo[i].loadFromFile("Imagenes/suelo_" + std::to_string(i + 1) + "_iso.png");
-	}
-
-	texturaColumna.loadFromFile("Imagenes/columna_rota_iso.png");
-	texturaAbismo.loadFromFile("Imagenes/abismo_iso.png");
-	texturaParedIzquierda.loadFromFile("Imagenes/pared_izquierda_iso.png");
-	texturaParedDerecha.loadFromFile("Imagenes/pared_derecha_iso.png");
-	texturaPozoIzquierda.loadFromFile("Imagenes/pozo_izquierda_iso.png");
-	texturaPozoDerecha.loadFromFile("Imagenes/pozo_derecha_iso.png");
-
+void Mapa::actualizar(float dt) {
+	tiempoFuego += dt;
 }
 
 // Dibuja una pared (roca o pozo) colgando bajo la casilla. Las imagenes de pared apoyan su punto (32, 50) en el centro del rombo
@@ -102,6 +101,13 @@ void Mapa::mostrar(sf::RenderWindow& ventana) {
 				case TipoTerreno::ABISMO:
 					sprite.setTexture(texturaAbismo);
 					break;
+				case TipoTerreno::MURO: {
+					// La imagen tiene 3 cuadros de 64x84 uno al lado del otro: se muestra uno segun el tiempo (como la bola)
+					int cuadro = (int)(tiempoFuego / TIEMPO_POR_CUADRO) % CUADROS_FUEGO;
+					sprite.setTexture(texturaMuro);
+					sprite.setTextureRect(sf::IntRect(cuadro * 64, 0, 64, 84));
+					break;
+				}
 				default:
 					sprite.setTexture(texturasSuelo[variantesSuelo[fila][columna]]);
 					break;

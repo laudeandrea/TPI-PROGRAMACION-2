@@ -93,6 +93,7 @@ Todo el juego usa estos colores. Si algo nuevo no combina, probablemente esté u
 | Vacío | `#5C4096` | `sf::Color(92, 64, 150)` | El vacío debajo del tablero y la niebla de los abismos |
 | Vacío claro | `#9676D6` | `sf::Color(150, 118, 214)` | Brillos y motas que suben del vacío |
 | Peligro | `#B04A4A` | `sf::Color(176, 74, 74)` | Vida, daño, avisos |
+| Fuego | `#F08C38` | `sf::Color(240, 140, 56)` | Solo el muro de fuego (sus llamas van de `#601A1E` en la punta a `#FFF0C4` en el centro) |
 
 El celeste **Gema** sale de la piedra del báculo del mago. Si se usa para todo, deja de llamar la atención.
 
@@ -166,7 +167,8 @@ y = 83   └──────────┘  ← fondo de la imagen
 
 El tablero es una **isla de piedra flotando sobre un vacío violeta**. Abajo del borde cuelga roca rota, y
 el mismo vacío se ve por los pozos del abismo, así que se entiende qué pasa si alguien cae.
-Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (1280×720, escala ×2).
+Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes/vista_previa_mapa.png) y
+[nivel 2](Imagenes/vista_previa_nivel2.png).
 
 | Archivo | Lienzo | Qué es |
 |---|---|---|
@@ -182,6 +184,8 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
 | `pozo_derecha_iso.png` | 64×160 | Igual, del lado derecho. |
 | `fondo_juego.png` | 1280×720 | Fondo de la pantalla de juego: oscuro arriba, el vacío violeta abajo. |
 | `sombra_personaje.png` | 28×10 | Sombra ovalada que va en los pies de cada personaje. |
+| `muro_fuego_iso.png` | 64×84 | Una casilla del muro de fuego (habilidad del nivel 2): piso chamuscado con llamas encima. |
+| `muro_fuego_animacion.png` | 192×84 | El mismo muro, animado: **3 cuadros de 64×84** uno al lado del otro. |
 
 - **Mismo centro en todas:** el centro del rombo está siempre a **50 px desde arriba** de la imagen, también
   en las paredes y pozos (aunque sean más altos). Por eso a las paredes no les sirve `CENTRO_ROMBO_DESDE_ABAJO`:
@@ -198,6 +202,12 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
   | Suelo o columna | ninguna |
 - **Orden:** primero las paredes de la casilla y después su baldosa. La parte de arriba de la pared queda
   tapada por el costado de la baldosa.
+- **Muro de fuego:** se dibuja como una baldosa más (mismo lienzo y mismo origen que la columna rota), en vez de
+  la baldosa de suelo de esa casilla. El juego usa la tira animada, igual que la bola:
+  `setTextureRect(sf::IntRect(cuadro * 64, 0, 64, 84))`, cambiando de cuadro cada 0,15 s (`Mapa::mostrar`).
+  `muro_fuego_iso.png` es un cuadro solo, por si alguna vez hace falta la imagen quieta.
+  Las llamas sobresalen hasta 44 px arriba del centro. Como el mapa entero se dibuja antes que los personajes,
+  el espectro que cruza el fuego se ve delante de las llamas, igual que pasa con la columna. Vista previa: [Imagenes/vista_previa_muro.png](Imagenes/vista_previa_muro.png).
 - **El abismo conviene adentro del tablero**, no en el borde: en el borde parece que al tablero le falta un
   pedazo. Rodeado de suelo se lee como un pozo.
 - **Fondo:** se dibuja primero y con la vista normal de la ventana (`window.getDefaultView()`), no con la de
@@ -220,7 +230,7 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
 |---|---|---|---|
 | `marcador_movimiento.png` | 64×40 | Rombo **Piedra** transparente: casilla a la que el mago puede caminar (después de clickearlo). | `(32, 20)` |
 | `marcador_alcance.png` | 64×40 | Rombo **Gema** transparente: casilla a la que llega la habilidad. | Centro del rombo, `(32, 20)` |
-| `marcador_objetivo.png` | 64×40 | Igual, en rojo (**Peligro**): hay un enemigo al alcance. También marca, desvaneciéndose en 0,5 s, las casillas que recibieron un golpe o la explosión del golem. | `(32, 20)` |
+| `marcador_objetivo.png` | 64×40 | Igual, en rojo (**Peligro**): hay un enemigo al alcance. También marca, desvaneciéndose en 0,5 s, las casillas que recibieron un golpe, la explosión del golem o la quemadura del fuego, y con el muro preparado, las 3 casillas donde quedaría. | `(32, 20)` |
 | `bola_energia.png` | 32×16 | Bola de energía: **2 cuadros de 16×16** uno al lado del otro, se alternan cada 0,1 s. | Centro del cuadro, `(8, 8)` |
 | `bola_espectro.png` | 32×16 | Bola de ectoplasma del espectro: mismo formato que la bola de energía, en los colores del **Vacío**, con dos ojitos oscuros y jirones rojizos para que no se confunda con la del mago. | `(8, 8)` |
 
@@ -231,21 +241,35 @@ Vista previa: [Imagenes/vista_previa_mapa.png](Imagenes/vista_previa_mapa.png) (
   (`ALTURA_PECHO` en `Juego.h`).
 - **Barra de vida arriba de la cabeza** (enemigos y mago): 32×4 px (del mundo), 6 px arriba de la imagen
   del personaje. Vacía en **Pizarra**, llena en **Peligro**, con un borde de 1 px color **Fondo**.
-- **HUD de abajo a la izquierda** (fijo en la pantalla, x = 32): cuatro filas.
-  - **Vida** (y = 548) y **Codice** (y = 580): título en **Piedra**, barra de 187×12 que empieza en x = 120
-    (vacía en **Pizarra**, llena en **Peligro**, borde **Fondo** de 2 px) y el número "80/100" en rojo claro.
-  - **Mana** (y = 612): mismo título y misma x de la barra, un rectángulo de 16×12 por cada punto (lleno en
-    **Gema**, vacío en **Pizarra**; con una habilidad preparada, los puntos que se van a gastar en
-    **Gema oscura**) y el número "8/10" en **Gema**. Las tres barras miden lo mismo, así quedan alineadas.
-  - **Ayuda** (y = 638): las habilidades una al lado de la otra, "[1] Bola de energia (2)", en **Piedra** (o
-    **Tenue** si no alcanza el maná), y al final "[Espacio] Pasar turno" en **Tenue**. Con una habilidad
-    preparada o el mago seleccionado, se reemplaza por la instrucción de qué hacer (en **Gema** / **Piedra**).
-- **Oleada:** "Oleada 1/3" en **Piedra**, arriba a la izquierda, en (32, 24).
-- **Cartel de fin de partida:** la pantalla entera se tapa con **Fondo** al 75 % de opacidad (alfa 190), y en
-  el medio va un panel de 480×200 en (400, 260), relleno **Fondo** con borde **Pizarra** de 2 px. Adentro,
-  centradas en x = 640: el título "VICTORIA" (**Gema**) o "DERROTA" (rojo claro) en y = 310, agrandado ×2 con
-  `setScale` (no con tamaño 44, para que siga nítido); el motivo en **Piedra** en y = 370; y "Enter para volver
-  al menu" en **Tenue** en y = 420.
+- **Panel del HUD a la derecha** (fijo en la pantalla): de x = 960 a 1280, todo el alto. Es la parte de la
+  ventana que la cámara deja libre (`PARTE_TABLERO` = 0,75 en `Camara.h`; si se cambia una, cambiar la otra:
+  `X_PANEL` en `Hud.cpp`). Relleno **Fondo** casi opaco (alfa 235) y un borde de 2 px **Pizarra** a la izquierda.
+  El contenido va de x = 984 a x = 1256 (24 px de margen). Lo que va a la derecha se alinea a x = 1256.
+  Las partes se separan con líneas de 2 px **Pizarra**. De arriba hacia abajo:
+  - **Nivel y oleada** (y = 24): "Nivel 1/2" en **Gema** a la izquierda y "Oleada 1/2" en **Piedra** a la derecha.
+  - **Vida** (y = 84) y **Codice** (y = 144): título en **Piedra** a la izquierda y "80/130" en rojo claro a la
+    derecha; 32 px más abajo, la barra de 267×12 (vacía en **Pizarra**, llena en **Peligro**, borde **Fondo** de 2 px).
+  - **Mana** (y = 204): igual, con "8/10" en **Gema**, y abajo un rectángulo de 24×12 por cada punto (separados
+    3 px: los 10 miden lo mismo que las barras). Llenos en **Gema**, vacíos en **Pizarra**; con una habilidad
+    preparada, los que se van a gastar en **Gema oscura**.
+  - **Habilidades** (y = 284): encabezado "Habilidades … Mana" en **Tenue**; abajo una por línea (cada 30 px),
+    "[1] Bola de energia" a la izquierda y el costo a la derecha. En **Gema** la preparada, en **Tenue** las que
+    no alcanza el maná, en **Piedra** las demás. Al final "[Espacio] Pasar turno" en **Tenue**.
+  - **Qué hacer** (y = 456): en varios renglones (el panel es angosto, se cortan con `\n`), con `setLineSpacing(1.2)`.
+    Sin nada elegido, "Click en el mago para moverlo" en **Tenue**; con el mago seleccionado, en **Piedra**; con
+    una habilidad preparada, en **Gema** y diciendo con qué tecla se cancela.
+  - **"[Esc] Menu"** abajo de todo (y = 676), en **Tenue**.
+- **Carteles** (nivel superado, victoria, derrota; los dibuja `dibujarCartel()`): la pantalla entera se tapa con
+  **Fondo** al 75 % de opacidad (alfa 190), y en el medio va un panel de 480×200 en (400, 260), relleno **Fondo**
+  con borde **Pizarra** de 2 px. Adentro, centradas en x = 640: el título en y = 310, agrandado ×2 con `setScale`
+  (no con tamaño 44, para que siga nítido); el detalle en **Piedra** en y = 370; y qué tecla apretar en **Tenue**
+  en y = 420.
+
+  | Cartel | Título | Detalle | Tecla |
+  |---|---|---|---|
+  | Nivel superado | "NIVEL SUPERADO" (**Gema**) | "Aprendiste el muro de fuego [3]" | "Enter para seguir" |
+  | Victoria | "VICTORIA" (**Gema**) | "Sobreviviste a todas las oleadas" | "Enter para volver al menu" |
+  | Derrota | "DERROTA" (rojo claro) | Por qué se perdió | "Enter para volver al menu" |
 - **Números de daño:** "-10" en rojo claro (`#E8786E`), fuente 22 con borde **Fondo** de 2 px. Aparecen
   arriba de la cabeza, suben 22 px en 0,9 s y en la segunda mitad se desvanecen.
 - **Todo el texto del HUD es tamaño 22** y lleva un borde oscuro de 2 px, para leerse sobre cualquier cosa.

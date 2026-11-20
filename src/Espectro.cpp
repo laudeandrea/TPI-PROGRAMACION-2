@@ -5,9 +5,11 @@ Espectro::Espectro(int _fila, int _columna) : Enemigo(_fila, _columna, VIDA_INIC
 };
 
 bool Espectro::puedePisar(TipoTerreno terreno) const {
+	// Tambien cruza el muro de fuego, pero se quema (el danio lo hace Juego::quemarSiEstaEnFuego)
 	return terreno == TipoTerreno::SUELO
 		|| terreno == TipoTerreno::COLUMNAROTA
-		|| terreno == TipoTerreno::ABISMO;
+		|| terreno == TipoTerreno::ABISMO
+		|| terreno == TipoTerreno::MURO;
 };
 
 int Espectro::getAlcanceAtaque() const {

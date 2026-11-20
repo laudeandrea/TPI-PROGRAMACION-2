@@ -40,10 +40,19 @@ bool Mago::gastarMana(int _cantidad){
 }
 
 const Habilidad& Mago::getHabilidad(HabilidadSeleccionada _habilidad) const{
-	// BOLA = 1 -> habilidades[0]; EMPUJE = 2 -> habilidades[1]
+	// BOLA = 1 -> habilidades[0]; EMPUJE = 2 -> habilidades[1]; MURO = 3 -> habilidades[2]
 	return habilidades[static_cast<int>(_habilidad)-1] ;
 }
 
 int Mago::getCantidadHabilidades() const{
 	return (int)habilidades.size();
+}
+
+bool Mago::tieneHabilidad(HabilidadSeleccionada _habilidad) const{
+	int numero = static_cast<int>(_habilidad);
+	return numero >= 1 && numero <= getCantidadHabilidades();
+}
+
+void Mago::aprenderHabilidad(const Habilidad& _habilidad){
+	habilidades.push_back(_habilidad);
 }

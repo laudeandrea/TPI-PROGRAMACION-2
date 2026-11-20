@@ -3,6 +3,8 @@
 
 class Camara {
 	private:
+		// Que parte del ancho de la ventana (desde la izquierda) es para el tablero. El resto es el panel del HUD
+		static constexpr float PARTE_TABLERO = 0.75f; // 960 de 1280 px
 		sf::View vista;
 		sf::Vector2f areaVisible; // tablero + margen: lo que siempre tiene que entrar en la ventana
 
