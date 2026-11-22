@@ -22,10 +22,13 @@ Menu::Menu(){
     // Se inicializa así no arranca con un valor basura
     seleccionada = 0;
 
-    // Textos de las opciones (sin tildes, asi SFML los muestra bien sin convertirlos)
-    std::string nombres[3] = { "Nueva partida", "Como jugar", "Salir" };
+    hayPartida = false;
+    // Textos de las opciones (sin tildes, asi SFML los muestra bien sin convertirlos).
+    // OJO: el orden tiene que coincidir con los indices que usa Juego:
+    // 0 = Continuar, 1 = Nueva partida, 2 = Como jugar, 3 = Salir.
+    std::string nombres[4] = { "Continuar", "Nueva partida", "Como jugar", "Salir" };
     
-    for (int i=0; i<3;i++){
+    for (int i=0; i<4;i++){
         opciones[i].setFont(fuente);
         opciones[i].setString(nombres[i]);
         opciones[i].setCharacterSize(22);
@@ -43,13 +46,20 @@ Menu::Menu(){
 int Menu::procesarEvento(const sf::Event& evento, const sf::RenderWindow& ventana){
     if (evento.type == sf::Event::KeyPressed) {
         if (evento.key.code == sf::Keyboard::Down) {
-            seleccionada = (seleccionada + 1) % 3;      // baja; desde "Salir" vuelve a la primera
+            do {
+                seleccionada = (seleccionada + 1) % 4;
+            } while (!hayPartida && seleccionada == 0);  // no se puede elegir "Continuar"
         }
         if (evento.key.code == sf::Keyboard::Up) {
-            seleccionada = (seleccionada + 2) % 3;      // sube; desde la primera va a "Salir"
+            do {
+                seleccionada = (seleccionada + 3) % 4;
+            } while (!hayPartida && seleccionada == 0);
         }
         if (evento.key.code == sf::Keyboard::Enter) {
-            return seleccionada;                        // avisa qué opción se eligió
+            if (seleccionada == 0 && !hayPartida) {
+                return -1; // apretó Enter sobre "Continuar" deshabilitada
+            }
+            return seleccionada;
         }
     }
 
@@ -59,7 +69,8 @@ int Menu::procesarEvento(const sf::Event& evento, const sf::RenderWindow& ventan
         sf::Vector2i pixel(evento.mouseMove.x, evento.mouseMove.y);
         sf::Vector2f punto = ventana.mapPixelToCoords(pixel, vista);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
+            if (i == 0 && !hayPartida) continue;   // "Continuar" no reacciona
             if (opciones[i].getGlobalBounds().contains(punto)) {
                 seleccionada = i;
             }
@@ -71,7 +82,8 @@ int Menu::procesarEvento(const sf::Event& evento, const sf::RenderWindow& ventan
         sf::Vector2i pixel(evento.mouseButton.x, evento.mouseButton.y);
         sf::Vector2f punto = ventana.mapPixelToCoords(pixel, vista);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
+            if (i == 0 && !hayPartida) continue;   // "Continuar" deshabilitada
             if (opciones[i].getGlobalBounds().contains(punto)) {
                 return i;
             }
@@ -87,11 +99,15 @@ void Menu::dibujar(sf::RenderWindow& ventana){
     ventana.draw(titulo);
 
     // Dibuja las opciones: la elegida en Gema, las demas en Piedra
-    for (int i=0;i<3;i++){
-        if (i == seleccionada) {
-            opciones[i].setFillColor(sf::Color(95, 224, 232));   // Gema
-        } else {
-            opciones[i].setFillColor(sf::Color(184, 178, 164));  // Piedra
+    for (int i = 0; i < 4; i++) {
+        if (i == 0 && !hayPartida) {
+            opciones[i].setFillColor(sf::Color(90, 86, 80));     // Gris apagado: deshabilitada
+        }
+        else if (i == seleccionada) {
+            opciones[i].setFillColor(sf::Color(95, 224, 232));  // Gema
+        }
+        else {
+            opciones[i].setFillColor(sf::Color(184, 178, 164)); // Piedra
         }
         ventana.draw(opciones[i]);
     }
@@ -101,3 +117,15 @@ void Menu::dibujar(sf::RenderWindow& ventana){
     selector.setPosition(caja.left - 14.f - 18.f, Y_PRIMERA_OPCION + seleccionada * SEPARACION_OPCIONES - 9.f);
     ventana.draw(selector);
 };
+
+void Menu::setHayPartida(bool hay) {
+    // Si aparecio una partida guardada, deja elegida "Continuar"
+    if (hay && !hayPartida) {
+        seleccionada = 0;
+    }
+    // Si ya no hay partida y el selector estaba en "Continuar", lo manda a "Nueva partida"
+    if (!hay && seleccionada == 0) {
+        seleccionada = 1;
+    }
+    hayPartida = hay;
+}

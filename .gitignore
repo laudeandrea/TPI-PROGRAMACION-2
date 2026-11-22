@@ -13,6 +13,9 @@
 /libs/SFML-2.6.2/lib/Debug/
 /libs/SFML-2.6.2/lib/cmake/
 
+# Partida guardada: se genera al jugar, no se sube
+partida.dat
+
 # Se quedan solo en esta PC
 /docs/
 /_plantilla_cmake/

@@ -32,6 +32,11 @@ para pasarle el juego a alguien, usá la carpeta de **Release** completa.
 
 La carpeta `build\` se puede borrar cuando quieras: se vuelve a generar al compilar y no se sube al repositorio.
 
+La partida se guarda en `partida.dat`, en la carpeta desde donde se ejecuta el juego. Si lo corrés desde
+Visual Studio, esa carpeta es la raíz del proyecto; si abrís el `.exe` con doble clic, queda al lado del
+ejecutable. Es un archivo **binario** (por ahora de 4 bytes: un `int` con el número del próximo nivel), así que
+abrirlo con el Notepad muestra caracteres raros: eso es normal. No se sube al repositorio.
+
 ## Cómo se juega
 
 Hay que defender el **códice** (el libro sobre el atril) en **2 niveles**, de **2 oleadas** cada uno. Se pierde
@@ -42,13 +47,18 @@ si el mago se queda sin vida o si destruyen el códice; se gana al terminar con 
 | 1 | El códice a la izquierda, los enemigos salen de la derecha. | 1) caballero y espectro. 2) caballero, espectro y golem. |
 | 2 | Dos pozos parten el tablero. El códice está arriba y los enemigos salen de abajo: para llegar pasan por el medio o por los bordes ([vista previa](Imagenes/vista_previa_nivel2.png)). Se aprende el **muro de fuego**. | 1) dos caballeros y un espectro. 2) dos golems, un caballero y un espectro. |
 
-Al ganar el nivel 1 aparece el cartel "Nivel superado" y **Enter** pasa al nivel 2. El mago empieza cada nivel
-con la vida y el maná llenos.
+Al ganar el nivel 1 aparece el cartel "Nivel superado": **Enter** pasa al nivel 2, **S** guarda la partida y
+vuelve al menú, y **Escape** vuelve al menú sin guardar. El mago empieza cada nivel con la vida y el maná
+llenos.
+
+El menú principal tiene **Continuar** y **Nueva partida**. "Continuar" retoma el nivel de la partida guardada;
+"Nueva partida" arranca de cero y borra el guardado. Mientras no haya ninguna partida guardada,
+"Continuar" se ve en gris y no se puede elegir.
 
 | Tecla | Qué hace |
 |---|---|
 | Click en el mago | Muestra a dónde puede caminar. Click en una casilla marcada lo mueve. |
-| **1** | Bola de energía: 10 de daño a un enemigo a 3 casillas o menos. Cuesta 2 de maná. |
+| **1** | Bola de energía: 10 de daño a un enemigo a 3 casillas o menos. Cuesta 3 de maná. |
 | **2** | Empuje: 5 de daño a un enemigo pegado y lo corre una casilla; ese turno el enemigo no juega. Si cae al abismo, muere (el espectro flota). Si atrás hay una columna, el borde u otro personaje, no se puede empujar y no gasta maná. Cuesta 3 de maná. |
 | **3** | Muro de fuego (solo desde el nivel 2): prende fuego en 3 casillas vacías, a 3 casillas del mago o menos, de costado a la línea entre el mago y la casilla elegida (al pasar el mouse se ve en rojo dónde va a quedar). Dura 3 turnos de los enemigos. Nadie lo puede pisar, salvo el espectro, que lo cruza pero pierde 10 de vida cada vez que entra o que empieza su turno ahí. Cuesta 4 de maná. |
 | **Espacio** | Terminar el turno. |
@@ -101,6 +111,8 @@ build/                 Generado al compilar (ignorado por git)
 | `Ataque` | `Enemigo.h` | `struct` con lo que hace un ataque: a qué casillas les pega y cuánto. El enemigo no sabe quién está ahí: el `Juego` lastima al que esté (`daniarCasilla()`). |
 | `Pergamino` | `Pergamino.h` / `Pergamino.cpp` | El códice que hay que defender: su casilla, su vida (80) y su dibujo (cambia a dañado con menos de la mitad). No es un `Personaje`. |
 | `Nivel` | `Nivel.h` / `Nivel.cpp` | Todo lo que cambia de un nivel a otro: el dibujo del tablero (`getDisenio()`), dónde están el códice y el mago, y las oleadas: en cuál se está (`getOleada()`), si hay otra (`hayOtraOleada()`) y `crearOleada()`, que arma los enemigos de la oleada actual. `hayOtroNivel()` dice si después viene otro. |
+| `Partida` | `Partida.h` / `Partida.cpp` | El registro que se guarda en disco. Por ahora tiene un solo dato: el número del próximo nivel. Usa solo tipos de tamaño fijo (nada de `std::string`), porque se escribe tal cual está en memoria. |
+| `PartidaArchivo` | `PartidaArchivo.h` / `PartidaArchivo.cpp` | Maneja `partida.dat` con las funciones de archivos de C: `fopen`, `fread`, `fwrite`, `fseek`, `ftell` y `fclose`. `existe()` dice si hay partida, `guardar()` pisa el archivo con un registro, `leer()` lo devuelve y `borrar()` lo elimina. |
 | `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Una bola que vuela (animada) hasta una casilla y guarda el daño que va a hacer. La usan la bola de energía del mago y el espectro. |
 | `Hud` | `Hud.h` / `Hud.cpp` | Lo que se dibuja fijo en la pantalla: el panel de la derecha (nivel, oleada, vida del mago y del códice, maná, habilidades y qué hacer ahora), los números de daño que suben y los carteles (nivel superado, victoria, derrota). |
 | `Muro` | `Juego.h` | `struct` con una casilla del muro de fuego y cuántos turnos le quedan. Mientras dura, esa casilla del mapa es `TipoTerreno::MURO`. |
@@ -111,6 +123,21 @@ build/                 Generado al compilar (ignorado por git)
 | `FaseTurno` | `Juego.h` | `enum` con de quién es el turno: `JUGADOR`, `DISPARANDO` (la bola del mago está volando), `ENEMIGOS` y `ENEMIGOS_DISPARANDO` (están volando las bolas de los espectros). Mientras vuela una bola, nadie se mueve. |
 
 `main.cpp` solo crea un `Juego` y llama a `ejecutar()`.
+
+### El guardado
+
+La partida se guarda **entre nivel y nivel**, nunca en medio de un nivel. Al terminar un nivel, el cartel
+"Nivel superado" ofrece **S** para guardar: se guarda el número del nivel que sigue y se vuelve al menú,
+donde "Continuar" arranca ahí. Si se cierra el juego a mitad de un nivel, "Continuar" vuelve a empezar ese
+nivel (o el que se haya guardado la última vez).
+
+- `Partida` es el registro: un `int nivel` y nada más. Tiene que ser de tamaño fijo, sin `std::string`,
+  porque `fwrite`/`fread` copian los bytes del objeto tal como están en memoria (`sizeof(Partida)`).
+- `PartidaArchivo` encapsula el archivo `partida.dat`: `guardar()` lo abre con `fopen(..., "wb")` (crea o
+  pisa), `leer()` con `fopen(..., "rb")`, `existe()` lo comprueba abriéndolo, y `borrar()` lo elimina con
+  `remove()`. Siempre se cierra con `fclose()`.
+- `Juego` es el único que decide cuándo guardar o borrar: guarda al apretar **S** en el cartel, borra al
+  elegir "Nueva partida" y al ganar el último nivel.
 
 ### Qué pasa al ejecutar
 
@@ -125,8 +152,10 @@ build/                 Generado al compilar (ignorado por git)
    - **`procesarEventos()`**: cierra la ventana si la cierran y reajusta la cámara si le cambian el tamaño.
      El resto depende del estado:
      - **En el menú**: le pasa cada evento a `menu.procesarEvento()`, que devuelve la opción elegida
-       (o `-1`). "Nueva partida" llama a `reiniciarPartida()` (que es `empezarNivel(1)`)
-       y cambia el estado a `JUGANDO`; "Salir" cierra la ventana.
+       (o `-1`). Antes, `menu.setHayPartida(partidaArchivo.existe())` habilita o deshabilita "Continuar"
+       según haya o no una partida guardada. "Continuar" lee el nivel de `partida.dat` y llama a
+       `empezarNivel()` con ese número; "Nueva partida" llama a `reiniciarPartida()` (que borra el archivo
+       y hace `empezarNivel(1)`); "Salir" cierra la ventana.
      - **Jugando**: Escape vuelve al menú. Los clicks solo cuentan si caen sobre el tablero (no sobre el panel
        del HUD). Para moverse, click en el mago: se marcan las casillas a las que
        puede caminar este turno (`casillasAlcanzables()`: una búsqueda por pasos que rodea pozos, columnas y
@@ -146,8 +175,9 @@ build/                 Generado al compilar (ignorado por git)
        `usarHabilidad()`, que para el muro no busca un enemigo: pregunta `sePuedePonerMuro()`, gasta el maná
        y `ponerMuro()` cambia esas casillas a `TipoTerreno::MURO` y las guarda en `muros`.
        **Espacio** termina el turno.
-     - **Nivel superado** (`NIVEL_SUPERADO`): Enter llama a `empezarNivel(numero + 1)` y vuelve a `JUGANDO`;
-       Escape vuelve al menú.
+     - **Nivel superado** (`NIVEL_SUPERADO`): **Enter** llama a `empezarNivel(numero + 1)` y vuelve a
+       `JUGANDO`; **S** guarda el nivel siguiente (`partidaArchivo.guardar(Partida(numero + 1))`) y vuelve
+       al menú; **Escape** vuelve al menú sin guardar.
      - **Fin de partida** (`GANASTE` o `PERDISTE`): Enter o Escape vuelven al menú.
    - **`actualizar(dt)`**: `dt` son los segundos desde el cuadro anterior (lo mide un `sf::Clock`).
      - Mientras vuelan bolas, `moverProyectiles()` las mueve. Cada una que llega le hace el daño a quien
@@ -155,6 +185,8 @@ build/                 Generado al compilar (ignorado por git)
      - Cuando el mago termina su acción, `terminarTurnoJugador()` saca a los enemigos sin vida, le pasa el
        turno a los enemigos y llama a `revisarFinDePartida()`: si no quedan enemigos, aparece la próxima
        oleada; si era la última, se pasa a `NIVEL_SUPERADO` (si `nivel.hayOtroNivel()`) o a `GANASTE`.
+       Acá no se guarda solo: la decisión es del jugador en el cartel; al ganar el último nivel se borra
+       el guardado (`partidaArchivo.borrar()`).
        La oleada nueva no juega en ese mismo momento: `revisarFinDePartida()` devuelve el
        turno al jugador (respiro) para que la vea aparecer y pueda reaccionar.
      - En el turno de los enemigos (`turnoEnemigos()`), cada uno elige lo que tenga más cerca (el mago o el

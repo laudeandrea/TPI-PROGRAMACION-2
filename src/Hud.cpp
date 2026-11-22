@@ -282,7 +282,7 @@ void Hud::dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::s
 }
 
 void Hud::dibujarNivelSuperado(sf::RenderWindow& ventana, const std::string& aviso) const {
-	dibujarCartel(ventana, "NIVEL SUPERADO", GEMA, aviso, "Enter para seguir");
+	dibujarCartel(ventana, "NIVEL SUPERADO", GEMA, aviso, "Enter: seguir | S: guardar y salir");
 }
 
 void Hud::dibujarCartel(sf::RenderWindow& ventana, const std::string& titulo, sf::Color colorTitulo,

@@ -4,7 +4,7 @@ Mago::Mago(int _fila, int _columna)
 	: Personaje(_fila, _columna, VIDA_INICIAL){
 	mana = MANA_INICIAL;
 	// El orden importa: tiene que ser el mismo que el de HabilidadSeleccionada (1 = bola, 2 = empuje)
-	habilidades.push_back(Habilidad(TipoHabilidad::BOLADEENERGIA, "Bola de energia", 10, 2, 3));
+	habilidades.push_back(Habilidad(TipoHabilidad::BOLADEENERGIA, "Bola de energia", 10, 3, 3));
 	// Empuje: el enemigo tiene que estar pegado (alcance 1). Si cae al abismo, no vuelve
 	habilidades.push_back(Habilidad(TipoHabilidad::EMPUJE, "Empuje", 5, 3, 1));
 	textura.loadFromFile("Imagenes/mago_64.png");

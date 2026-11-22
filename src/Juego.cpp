@@ -1,4 +1,8 @@
+#include <fstream>
+#include <cstdio>
+
 #include "Juego.h"
+#include "PartidaArchivo.h"
 
 #include <algorithm>
 #include <cstdlib> // std::abs
@@ -73,24 +77,36 @@ void Juego::procesarEventos() {
 
 		// Lo demas depende de en que pantalla estamos
 		if (estado == EstadoJuego::MENU) {
+			// El menu se entera en cada vuelta si hay una partida para continuar
+			menu.setHayPartida(partidaArchivo.existe());
+
 			int opcion = menu.procesarEvento(event, window);
-			if (opcion == 0) {              // Nueva partida: siempre arranca de cero
+			if (opcion == 0) {              // Continuar: retoma el nivel guardado
+				empezarNivel(partidaArchivo.leer().getNivel());
+				estado = EstadoJuego::JUGANDO;
+			}
+			if (opcion == 1) {              // Nueva partida: siempre arranca de cero
 				reiniciarPartida();
 				estado = EstadoJuego::JUGANDO;
 			}
-			if (opcion == 2) {              // Salir
+			if (opcion == 3) {              // Salir
 				window.close();
 			}
-			// opcion 1 ("Como jugar"): todavia no hay pantalla, no hace nada
+			// opcion 2 ("Como jugar"): todavia no hay pantalla, no hace nada
 		}
 		else if (estado == EstadoJuego::NIVEL_SUPERADO) {
-			// Cartel de nivel superado: Enter pasa al proximo nivel, Escape vuelve al menu
+			// Enter: seguir al proximo nivel. S: guardar y volver al menu.
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
 				empezarNivel(nivel.getNumero() + 1);
 				estado = EstadoJuego::JUGANDO;
 			}
+			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::S) {
+				if (partidaArchivo.guardar(Partida(nivel.getNumero() + 1))) {
+					estado = EstadoJuego::MENU; // si no pudo guardar, se queda en el cartel
+				}
+			}
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-				estado = EstadoJuego::MENU;
+				estado = EstadoJuego::MENU; // salir sin guardar
 			}
 		}
 		else if (estado == EstadoJuego::GANASTE || estado == EstadoJuego::PERDISTE) {
@@ -101,7 +117,7 @@ void Juego::procesarEventos() {
 			}
 		}
 		else {
-			// Escape vuelve al menu (idea de Santiago)
+			// Escape vuelve al menu
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
 				habilidadPreparada = HabilidadSeleccionada::NINGUNA; // al salir al menu se cancela la habilidad
 				magoSeleccionado = false;
@@ -190,6 +206,7 @@ void Juego::dibujar() {
 	window.clear();
 
 	if(estado == EstadoJuego::MENU){
+		menu.setHayPartida(partidaArchivo.existe());
 		menu.dibujar(window);
 	}else{
 		window.setView(window.getDefaultView()); // vista de la ventana: 1280x720
@@ -471,6 +488,7 @@ void Juego::actualizar(float dt) {
 // ---------------------------------------------------------------- Partida
 
 void Juego::reiniciarPartida() {
+	partidaArchivo.borrar();
 	empezarNivel(1);
 }
 
@@ -542,8 +560,14 @@ void Juego::revisarFinDePartida() {
 			magoSeMovio = false;
 		}
 		else {
-			// Se gano el nivel: si hay otro, cartel para seguir (el nivel nuevo lo arma Enter, ver procesarEventos)
-			estado = nivel.hayOtroNivel() ? EstadoJuego::NIVEL_SUPERADO : EstadoJuego::GANASTE;
+			if (nivel.hayOtroNivel()) {
+				// Ya no se guarda solo: el jugador decide en el cartel (ver procesarEventos)
+				estado = EstadoJuego::NIVEL_SUPERADO;
+			}
+			else {
+				partidaArchivo.borrar(); // se termino el juego
+				estado = EstadoJuego::GANASTE;
+			}
 			habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 			magoSeleccionado = false;
 		}

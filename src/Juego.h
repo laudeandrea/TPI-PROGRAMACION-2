@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PartidaArchivo.h"
 #include <SFML/Graphics.hpp>
 #include "Camara.h"
 #include "Mapa.h"
@@ -57,8 +58,6 @@ class Juego {
 			int turnosRestantes;
 		};
 
-		// El orden importa. C++ crea los atributos en el orden en que estan declarados,
-		// y la camara necesita que el mapa ya exista (usa mapa.getTamanioMundo())
 		sf::RenderWindow window;
 		sf::Texture texturaFondo;
 		sf::Sprite fondo;
@@ -68,6 +67,7 @@ class Juego {
 		std::vector<std::unique_ptr<Enemigo>> enemigos;
 		Pergamino codice;
 		Nivel nivel;
+		PartidaArchivo partidaArchivo;
 		Camara camara;
 		Menu menu;
 		EstadoJuego estado;
