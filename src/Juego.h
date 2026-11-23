@@ -2,6 +2,7 @@
 
 #include "PartidaArchivo.h"
 #include <SFML/Graphics.hpp>
+#include "Sonidos.h"
 #include "Camara.h"
 #include "Mapa.h"
 #include "Mago.h"
@@ -69,6 +70,7 @@ class Juego {
 		Nivel nivel;
 		PartidaArchivo partidaArchivo;
 		Camara camara;
+		Sonidos sonidos;
 		Menu menu;
 		EstadoJuego estado;
 		FaseTurno fase;

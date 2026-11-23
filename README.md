@@ -86,6 +86,7 @@ juego_pr2.rc           Ícono del .exe (usa Imagenes/icono.ico)
 src/                   Código del juego (.cpp y .h)
 Imagenes/              Texturas e íconos
 Fuentes/               Fuente del juego (Pixelify Sans) y su licencia (OFL.txt)
+Sonidos/               Efectos y música (WAV/OGG) y sus créditos
 libs/SFML-2.6.2/       SFML: headers, .lib y DLL (Debug con -d, Release sin -d)
 build/                 Generado al compilar (ignorado por git)
 ```
@@ -138,6 +139,26 @@ nivel (o el que se haya guardado la última vez).
   `remove()`. Siempre se cierra con `fclose()`.
 - `Juego` es el único que decide cuándo guardar o borrar: guarda al apretar **S** en el cartel, borra al
   elegir "Nueva partida" y al ganar el último nivel.
+
+### Sonidos
+
+Los archivos van en `Sonidos/` y se cargan una sola vez en la clase `Sonidos`: `sf::SoundBuffer` para los
+efectos cortos y `sf::Music` para la música de fondo, que se lee del disco y se reproduce en loop. SFML
+carga WAV, OGG y FLAC; **no** carga MP3.
+
+| Archivo | Cuándo suena |
+|---|---|
+| `musica_medieval.wav` | De fondo, en loop, desde que abre el juego (volumen 30). |
+| `inicio.ogg` | Al elegir "Nueva partida" o "Continuar". |
+| `bola_energia.ogg` | Al lanzar la bola de energía. |
+| `impacto.ogg` | Cuando llega cualquier proyectil (la bola del mago o la del espectro). |
+| `ataque_enemigo.wav` | Cuando un enemigo ataca cuerpo a cuerpo (caballero y golem). |
+| `ataque_espectro.ogg` | Cuando el espectro lanza su bola de ectoplasma. |
+| `victoria.wav` | Al terminar la última oleada del nivel 2. |
+| `derrota.ogg` | Cuando muere el mago o destruyen el códice. |
+
+Victoria y derrota paran la música para que se escuche el jingle; al volver al menú, la música arranca de
+nuevo. El origen y las licencias de cada archivo están en `Sonidos/CREDITOS.txt`.
 
 ### Qué pasa al ejecutar
 
@@ -282,5 +303,6 @@ Las reglas de código y de arte están en [CONTRIBUTING.md](CONTRIBUTING.md). Le
 - **Imágenes nuevas:** van en `Imagenes/` y se cargan con ruta relativa, por ejemplo
   `textura.loadFromFile("Imagenes/mago_64.png");`.
 - **Fuentes:** van en `Fuentes/` y se cargan igual: `fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf");`.
-- Si agregás sonido (`sf::Sound`, `sf::Music`), no hay que configurar nada: `sfml-audio` y `openal32.dll`
-  ya se enlazan y se copian.
+- **Sonidos:** van en `Sonidos/` (WAV u OGG; SFML no carga MP3) y se cargan con ruta relativa, por ejemplo
+  `buffer.loadFromFile("Sonidos/impacto.ogg");`. No hay que configurar nada: `sfml-audio` y `openal32.dll`
+  ya se enlazan y se copian, y el evento posterior a la compilación copia la carpeta al lado del `.exe`.

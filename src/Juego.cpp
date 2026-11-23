@@ -47,6 +47,7 @@ Juego::Juego()
 	camara.ajustarAVentana(window.getSize());
 
 	empezarNivel(1);
+	sonidos.iniciarMusica(); // la musica de fondo arranca ya en el menu
 };
 
 void Juego::ejecutar() {
@@ -75,6 +76,12 @@ void Juego::procesarEventos() {
 			camara.ajustarAVentana(window.getSize());
 		}
 
+		// Volumen de la musica con - y = (funciona en el menu y jugando, para calibrarlo a gusto)
+		if (event.type == sf::Event::KeyPressed) {
+			if (event.key.code == sf::Keyboard::Hyphen) sonidos.cambiarVolumenMusica(-1.f);
+			if (event.key.code == sf::Keyboard::Equal) sonidos.cambiarVolumenMusica(1.f);
+		}
+
 		// Lo demas depende de en que pantalla estamos
 		if (estado == EstadoJuego::MENU) {
 			// El menu se entera en cada vuelta si hay una partida para continuar
@@ -84,10 +91,12 @@ void Juego::procesarEventos() {
 			if (opcion == 0) {              // Continuar: retoma el nivel guardado
 				empezarNivel(partidaArchivo.leer().getNivel());
 				estado = EstadoJuego::JUGANDO;
+				sonidos.reproducirInicio();
 			}
 			if (opcion == 1) {              // Nueva partida: siempre arranca de cero
 				reiniciarPartida();
 				estado = EstadoJuego::JUGANDO;
+				sonidos.reproducirInicio();
 			}
 			if (opcion == 3) {              // Salir
 				window.close();
@@ -114,6 +123,7 @@ void Juego::procesarEventos() {
 			if (event.type == sf::Event::KeyPressed
 				&& (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Escape)) {
 				estado = EstadoJuego::MENU;
+				sonidos.iniciarMusica(); // vuelve la musica de fondo
 			}
 		}
 		else {
@@ -541,6 +551,7 @@ void Juego::empezarOleada() {
 void Juego::revisarFinDePartida() {
 	if (!mago.estaVivo() || codice.estaDestruido()) {
 		estado = EstadoJuego::PERDISTE;
+		sonidos.reproducirDerrota();
 		habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 		magoSeleccionado = false;
 		return;
@@ -567,6 +578,7 @@ void Juego::revisarFinDePartida() {
 			else {
 				partidaArchivo.borrar(); // se termino el juego
 				estado = EstadoJuego::GANASTE;
+				sonidos.reproducirVictoria();
 			}
 			habilidadPreparada = HabilidadSeleccionada::NINGUNA;
 			magoSeleccionado = false;
@@ -622,6 +634,7 @@ void Juego::usarHabilidad(int fila, int columna) {
 
 		proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBola,
 			habilidad.getDanio(), fila, columna));
+		sonidos.reproducirBola();
 		fase = FaseTurno::DISPARANDO;
 	}
 	else if (habilidad.getTipo() == TipoHabilidad::EMPUJE) {
@@ -779,6 +792,14 @@ void Juego::turnoEnemigos() {
 			// virtual: se ejecuta el atacar del enemigo que sea de verdad (el del golem explota)
 			Ataque ataque = enemigo.atacar(filaObjetivo, columnaObjetivo);
 
+			// El espectro tira una bola (suena distinto); los demas pegan cuerpo a cuerpo
+			if (enemigo.lanzaProyectil()) {
+				sonidos.reproducirAtaqueEspectro();
+			}
+			else {
+				sonidos.reproducirAtaque();
+			}
+
 			for (const sf::Vector2i& casilla : ataque.casillas) {
 				if (enemigo.lanzaProyectil()) {
 					// Sale de su pecho y va al pecho del objetivo; el danio se aplica cuando llega
@@ -855,6 +876,7 @@ void Juego::moverProyectiles(float dt) {
 		proyectil->actualizar(dt);
 		if (proyectil->yaLlego()) {
 			daniarCasilla(proyectil->getFilaObjetivo(), proyectil->getColumnaObjetivo(), proyectil->getDanio());
+			sonidos.reproducirImpacto();
 		}
 	}
 

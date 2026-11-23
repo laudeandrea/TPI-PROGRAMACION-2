@@ -1,0 +1,40 @@
+Sonidos del juego
+=================
+
+Superpowers Asset Packs (CC0)
+-----------------------------
+Creados por Sparklin Labs / Pixel-boy.
+Origen: https://github.com/sparklinlabs/superpowers-asset-packs
+Licencia: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+La atribucion no es obligatoria, pero se deja como agradecimiento.
+
+  inicio.ogg           <- ninja-adventure/succes.ogg
+  victoria.wav         <- medieval-fantasy/victory-1.wav
+  derrota.ogg          <- ninja-adventure/game-over.ogg
+  ataque_enemigo.wav   <- medieval-fantasy/monster-1.wav
+  ataque_espectro.ogg  <- ninja-adventure/magic-1.ogg
+
+RandomMind (CC0)
+----------------
+Tema: Medieval: The Old Tower Inn
+Autor: RandomMind
+Origen: https://opengameart.org/content/medieval-the-old-tower-inn
+Licencia: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+Es la version "loop" que publica el autor (50 segundos).
+
+  musica_medieval.wav  <- Loop_The_Old_Tower_Inn.wav
+
+Kenney (CC0)
+------------
+Pack: Impact Sounds (1.0) - Kenney (www.kenney.nl)
+Licencia: CC0 (https://creativecommons.org/publicdomain/zero/1.0/)
+
+  impacto.ogg          <- impactSoft_medium_000.ogg
+
+Otros
+-----
+  bola_energia.ogg
+    Origen: (completar: autor, link y licencia)
+
+Recordatorio: usar solo sonidos CC0 o con licencia que permita el uso.
+Anotar aca el origen de cada archivo nuevo.
