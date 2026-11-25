@@ -15,4 +15,7 @@ class Casilla {
 		Casilla(TipoTerreno t = TipoTerreno::SUELO);
 		TipoTerreno getTipoTerreno() const;
 		void setTipoTerreno(TipoTerreno _tipoTerreno);
+		// Si se puede caminar por ella: solo el suelo comun (no las columnas, el abismo, el fuego ni la casilla
+		// del codice). El espectro ademas vuela por arriba de algunas: ver Espectro::puedePisar.
+		bool esTransitable() const;
 };

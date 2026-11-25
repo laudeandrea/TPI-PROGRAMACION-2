@@ -28,4 +28,6 @@ class Personaje {
 		virtual bool puedePisar(TipoTerreno terreno) const;
 
 		virtual void recibirDanio(int cantidad);
+		// Para cargar una partida guardada: pone la vida (entre 0 y la vida maxima).
+		void setVida(int _vida);
 };

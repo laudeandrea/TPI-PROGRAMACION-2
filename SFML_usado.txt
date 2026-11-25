@@ -6,7 +6,7 @@ Todo lo de SFML empieza con "sf::". Versión: SFML 2.6.2.
 
 Se actualiza cada vez que cambia el código. Si aparece algo de SFML que no está acá, falta agregarlo.
 
-Última actualización: 20/11/2026
+Última actualización: 24/11/2026
 
 ----------------------------------------------------------------------------------------------------
 1. LA VENTANA: sf::RenderWindow
@@ -23,16 +23,16 @@ Se crea una sola vez, en Juego.
   window.setFramerateLimit(60)
       Limita el juego a 60 cuadros por segundo. Sin esto el loop corre lo más rápido que puede y
       usa el 100% del procesador.
-      -> Juego.cpp (constructor)
+      -> Juego.cpp (iniciar)
 
   window.setIcon(ancho, alto, pixeles)
       Pone el ícono de la ventana (el de la barra de título y el de la barra de tareas).
       Los píxeles salen de un sf::Image.
-      -> Juego.cpp (constructor)
+      -> Juego.cpp (iniciar)
 
   window.isOpen()
       Devuelve true mientras la ventana esté abierta. Es la condición del game loop.
-      -> Juego.cpp (ejecutar)
+      -> Juego.cpp (iniciar: el game loop)
 
   window.pollEvent(event)
       Saca el próximo evento de la cola (un click, una tecla, cerrar la ventana...) y lo guarda en
@@ -46,7 +46,7 @@ Se crea una sola vez, en Juego.
   window.getSize()
       Devuelve el tamaño actual de la ventana en píxeles, como sf::Vector2u.
       Cambia si el usuario la agranda o la achica.
-      -> Juego.cpp (constructor y procesarEventos)
+      -> Juego.cpp (iniciar y procesarEventos)
 
   window.clear()
       Borra todo lo dibujado en el cuadro anterior. Se llama al principio de cada dibujado.
@@ -57,8 +57,8 @@ Se crea una sola vez, en Juego.
       Dibuja un sprite, un texto o cualquier cosa dibujable. Lo que se dibuja después queda arriba
       de lo anterior, así que el orden importa (fondo primero, personajes al final).
       -> Juego.cpp (dibujar: el fondo y los marcadores), Mapa.cpp (mostrar), Personaje.cpp (mostrar
-         y mostrarBarraVida), Pergamino.cpp (mostrar), Menu.cpp (dibujar), Proyectil.cpp (mostrar),
-         Hud.cpp
+         y mostrarBarraVida), Pergamino.cpp (mostrar), Menu.cpp (dibujar), MenuDificultad.cpp (dibujar), Ayuda.cpp (dibujar),
+         Proyectil.cpp (mostrar), Hud.cpp
 
   window.display()
       Muestra en pantalla todo lo que se dibujó. Hasta que no se llama, no se ve nada.
@@ -68,7 +68,7 @@ Se crea una sola vez, en Juego.
   window.setView(vista)
       Elige qué parte del mundo se ve en la ventana (ver sf::View más abajo).
       Todo lo que se dibuja después usa esa vista.
-      -> Camara.cpp (aplicar), Menu.cpp (dibujar), Juego.cpp (dibujar)
+      -> Camara.cpp (aplicar), Menu.cpp (dibujar), MenuDificultad.cpp (dibujar), Ayuda.cpp (dibujar), Juego.cpp (dibujar)
 
   window.getDefaultView()
       La vista "de fábrica" de la ventana: muestra el rectángulo (0, 0, 1280, 720), o sea, la
@@ -76,13 +76,16 @@ Se crea una sola vez, en Juego.
       y cubra toda la pantalla; después se pone la vista de la cámara para dibujar el tablero.
       ¡CUIDADO! Si después de getDefaultView() te olvidás de volver a poner la cámara, el tablero
       se dibuja en otro lugar (sin el zoom ni el centrado de la cámara).
-      -> Juego.cpp (dibujar)
+      El panel del HUD también usa esta vista: por eso el click en el panel (elegir una habilidad o
+      "Terminar turno") se convierte con mapPixelToCoords(pixel, window.getDefaultView()).
+      -> Juego.cpp (dibujarTablero y procesarEventoJugando), Hud.cpp
 
   window.mapCoordsToPixel(punto, vista)
       Lo contrario de mapPixelToCoords: en qué píxel de la ventana cae un punto del mundo, mirado
       con esa vista. El HUD lo usa para los números de daño: sabe dónde está el enemigo en el mundo
       (con la cámara) y lo pasa a la pantalla para escribir el "-10" ahí, con la vista por defecto.
-      -> Hud.cpp (dibujarNumeros)
+      Lo mismo para el número de los ataques anunciados y el "!" arriba de los enemigos.
+      -> Hud.cpp (dibujarNumeros, dibujarAmenazas y dibujarTurnosFuego)
 
   window.mapPixelToCoords(pixel)
   window.mapPixelToCoords(pixel, vista)
@@ -94,13 +97,15 @@ Se crea una sola vez, en Juego.
       ¡CUIDADO! La vista que queda puesta es la ÚLTIMA que se usó al dibujar. En el juego es la del
       HUD, no la de la cámara: por eso el click del tablero le pasa camara.getVista(). Sin eso, el
       click cae en otra casilla.
-      -> Juego.cpp (procesarEventos y casillaBajoElMouse), Menu.cpp (procesarEvento), Hud.cpp (dibujarNumeros)
+      -> Juego.cpp (procesarEventoJugando, casillaBajoElMouse y dibujarTablero), Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento),
+         Ayuda.cpp (procesarEvento), Hud.cpp (dibujarNumeros, dibujarAmenazas y dibujarTurnosFuego)
 
   window.getViewport(vista)
       En qué rectángulo de la ventana se dibuja esa vista, ya en píxeles (un sf::IntRect). Es su
       viewport (ver vista.setViewport más abajo) pasado de proporciones a píxeles: con la cámara,
-      (0, 0, 960, 720). El juego lo usa para ignorar los clicks que caen sobre el panel del HUD.
-      -> Juego.cpp (procesarEventos)
+      (0, 0, 960, 720). El juego lo usa para saber si el click cayó sobre el tablero o sobre el panel
+      del HUD (y en ese caso, preguntarle al HUD qué botón se tocó).
+      -> Juego.cpp (procesarEventoJugando)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -116,7 +121,7 @@ Se leen con window.pollEvent(event).
         sf::Event::MouseButtonPressed  -> apretaron un botón del mouse
         sf::Event::MouseMoved          -> movieron el mouse
         sf::Event::KeyPressed          -> apretaron una tecla
-      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+      -> Juego.cpp (procesarEventos y procesarEventoJugando), Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento), Ayuda.cpp (procesarEvento)
 
   ¡CUIDADO! Cada tipo de evento guarda sus datos en un campo distinto (mouseButton, mouseMove,
   key). Leer el campo de otro tipo (por ejemplo event.key en un click) da basura.
@@ -124,39 +129,46 @@ Se leen con window.pollEvent(event).
   event.mouseButton.button
       Con qué botón del mouse se hizo click. sf::Mouse::Left es el izquierdo.
       Solo vale la pena leerlo si event.type es MouseButtonPressed.
-      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+      -> Juego.cpp (procesarEventos y procesarEventoJugando), Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento), Ayuda.cpp (procesarEvento)
 
   event.mouseButton.x / event.mouseButton.y
       En qué píxel de la ventana se hizo click.
-      -> Juego.cpp (procesarEventos), Menu.cpp (procesarEvento)
+      -> Juego.cpp (procesarEventos y procesarEventoJugando), Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento), Ayuda.cpp (procesarEvento)
 
   event.mouseMove.x / event.mouseMove.y
       En qué píxel de la ventana está el mouse ahora. Solo si event.type es MouseMoved.
-      -> Menu.cpp (procesarEvento)
+      -> Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento)
 
   event.key.code
       Qué tecla se apretó. Solo si event.type es KeyPressed. Las teclas están en sf::Keyboard:
-        sf::Keyboard::Up / Down   -> flechas arriba y abajo
+        sf::Keyboard::Up / Down   -> flechas arriba y abajo (en el menú, cambian de opción)
+        sf::Keyboard::Left / Right -> flechas izquierda y derecha (en "Como jugar", cambian de página)
         sf::Keyboard::Enter       -> Enter
-        sf::Keyboard::Escape      -> Escape (en el tablero, vuelve al menú)
+        sf::Keyboard::Escape      -> Escape (en el tablero, guarda la partida y vuelve al menú)
         sf::Keyboard::Num1 / Numpad1 -> 1 de arriba de las letras o del teclado numérico
                                         (en el tablero, prepara o cancela la bola de energía)
         sf::Keyboard::Num2 / Numpad2 -> 2 (en el tablero, prepara o cancela el empuje)
         sf::Keyboard::Num3 / Numpad3 -> 3 (en el tablero, prepara o cancela el muro de fuego)
         sf::Keyboard::Space       -> barra espaciadora (en el tablero, pasa el turno)
         sf::Keyboard::Enter       -> también pasa al nivel siguiente y cierra el cartel de victoria o derrota
-      -> Menu.cpp (procesarEvento), Juego.cpp (procesarEventos)
+        sf::Keyboard::S           -> en el cartel de nivel superado, vuelve al menú (igual que Escape:
+                                     el nivel siguiente ya quedó guardado)
+        sf::Keyboard::Hyphen / Equal -> las teclas - y = (a la derecha del 0): bajan y suben la música
+                                     (y se ve un momento en pantalla)
+      -> Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento), Ayuda.cpp (procesarEvento), Juego.cpp (procesarEventos y procesarEventoJugando)
 
   sf::Mouse::getPosition(window)
       En qué píxel de la ventana está el mouse AHORA (un sf::Vector2i), sin esperar un evento.
       Sirve para lo que se dibuja según dónde está el mouse: con el muro de fuego preparado, se
       marca en rojo dónde quedaría el muro debajo del mouse.
+      También se usa para resaltar la habilidad o el botón "Terminar turno" que está debajo del mouse.
       ¡CUIDADO! Sin pasarle la ventana devuelve la posición en TODA la pantalla, no en la ventana.
-      -> Juego.cpp (casillaBajoElMouse)
+      -> Juego.cpp (casillaBajoElMouse y dibujarTablero)
 
   const sf::Event& evento (como parámetro)
       Menu::procesarEvento recibe el evento que leyó Juego, para que el menú decida qué hacer con él.
-      -> Menu.h / Menu.cpp
+      Ayuda::procesarEvento hace lo mismo con la pantalla de "Como jugar".
+      -> Menu.h / Menu.cpp, MenuDificultad.h / MenuDificultad.cpp, Ayuda.h / Ayuda.cpp
 
 
 ----------------------------------------------------------------------------------------------------
@@ -178,13 +190,13 @@ Hay tres cosas distintas y es fácil confundirlas:
   textura.loadFromFile("Imagenes/archivo.png")
       Carga la imagen desde el disco. Devuelve false si no la encuentra.
       La ruta es relativa a la carpeta del .exe.
-      -> Juego.cpp (sf::Image del ícono, sf::Texture del fondo, los marcadores y las bolas), Mapa.cpp, Mago.cpp, Caballero.cpp,
-         Espectro.cpp, Golem.cpp, Pergamino.cpp, Menu.cpp (sf::Texture)
+      -> Juego.cpp (iniciar: sf::Image del ícono, sf::Texture del fondo, los marcadores y las bolas), Mapa.cpp, Mago.cpp, Caballero.cpp,
+         Espectro.cpp, Golem.cpp, Pergamino.cpp, Menu.cpp, MenuDificultad.cpp, Ayuda.cpp (sf::Texture)
 
       Las texturas también se pueden cargar en un for armando el nombre del archivo:
         texturasSuelo[i].loadFromFile("Imagenes/suelo_" + std::to_string(i + 1) + "_iso.png");
       (std::to_string no es de SFML: convierte un número en texto. Está en <string>.)
-      -> Mapa.cpp (constructor)
+      -> Mapa.cpp (constructor), Ayuda.cpp (constructor: el dibujo de cada página)
 
   imagen.getSize()
       Ancho y alto de la imagen en píxeles.
@@ -201,13 +213,14 @@ Hay tres cosas distintas y es fácil confundirlas:
       ¡CUIDADO! La primera vez, el sprite se queda con el tamaño de esa textura. Si después le das
       otra de OTRO tamaño, sigue usando el tamaño viejo y la imagen se ve cortada, salvo que pases
       true como segundo parámetro. Con un sf::Sprite nuevo para cada cosa no hay problema.
-      -> Juego.cpp (constructor: el fondo), Mapa.cpp, Personaje.cpp, Pergamino.cpp, Menu.cpp
+      -> Juego.cpp (iniciar: el fondo), Mapa.cpp, Personaje.cpp, Pergamino.cpp, Menu.cpp, MenuDificultad.cpp,
+         Ayuda.cpp (constructor: el fondo y las flechas)
 
   sf::Sprite pared(textura);
       Crea el sprite y le pone la textura en el mismo paso (es lo mismo que crearlo vacío y hacer
       setTexture). Como es un sprite nuevo, toma el tamaño justo de esa textura: por eso las
       paredes (64x128 la roca, 64x160 el pozo) no se cortan.
-      -> Mapa.cpp (dibujarPared), Proyectil.cpp (mostrar)
+      -> Mapa.cpp (dibujarPared), Proyectil.cpp (mostrar), Ayuda.cpp (dibujar: el dibujo de la página)
 
   sprite.setTextureRect(sf::IntRect(x, y, ancho, alto))
       Muestra solo un pedazo de la textura. Sirve para animar: la imagen de la bola de energía
@@ -218,13 +231,16 @@ Hay tres cosas distintas y es fácil confundirlas:
   sprite.setColor(sf::Color(255, 255, 255, alfa))
       Tiñe el sprite: cada píxel de la imagen se multiplica por ese color. Con blanco (255, 255, 255)
       los colores quedan iguales, y solo cambia la transparencia (el cuarto número). Así las casillas
-      rojas de un golpe se van desvaneciendo con la misma imagen del marcador.
-      -> Juego.cpp (dibujarExplosiones)
+      rojas de un golpe se van desvaneciendo con la misma imagen del marcador. En "Como jugar", la
+      flecha que no lleva a ninguna página (antes de la primera o después de la última) se ve apagada
+      con alfa 50.
+      -> Juego.cpp (dibujarExplosiones), Ayuda.cpp (dibujar)
 
   textura.getSize()
       Ancho y alto de la textura en píxeles (sf::Vector2u). La barra de vida lo usa para saber
-      cuánto mide el personaje y ponerse arriba de su cabeza.
-      -> Personaje.cpp (mostrarBarraVida)
+      cuánto mide el personaje y ponerse arriba de su cabeza. "Como jugar" lo usa para poner el
+      origen en el centro del dibujo de cada página (miden distinto).
+      -> Personaje.cpp (mostrarBarraVida), Ayuda.cpp (dibujar)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -238,22 +254,28 @@ Hay tres cosas distintas y es fácil confundirlas:
 
   fuente.loadFromFile("Fuentes/PixelifySans-Regular.ttf")
       Carga la fuente desde el disco. Devuelve false si no la encuentra.
-      -> Menu.cpp (constructor), Hud.cpp (constructor)
+      -> Menu.cpp (constructor), MenuDificultad.cpp (constructor), Hud.cpp (constructor), Ayuda.cpp (constructor)
 
   fuente.setSmooth(false)
       Apaga el suavizado de las letras. Pixelify Sans es pixel art: sin suavizado se ve nítida,
       igual que el resto de las imágenes.
-      -> Hud.cpp (constructor)
+      -> Hud.cpp (constructor), MenuDificultad.cpp (constructor)
 
   texto.setFont(fuente)
       Elige con qué fuente se escribe.
       -> Menu.cpp (constructor), Hud.cpp (crearTexto)
 
+  sf::Text texto(contenido, fuente, 22);
+      Crea el texto con lo que dice, la fuente y el tamaño en un solo paso (es lo mismo que
+      setString + setFont + setCharacterSize).
+      -> Ayuda.cpp (crearTexto)
+
   texto.setString("...")
       Qué dice el texto. A diferencia de la fuente, el texto SÍ se copia, así que el string original
       se puede borrar.
       Ojo con las tildes: pasado así, "ó" se ve mal. Para usarlas hay que convertirlo con
-      sf::String::fromUtf8(texto.begin(), texto.end()). Por ahora el menú no usa tildes.
+      sf::String::fromUtf8(texto.begin(), texto.end()). Por ahora ningún texto del juego usa tildes
+      (ni el menú, ni el HUD, ni "Como jugar").
       -> Menu.cpp (constructor)
 
   texto.setCharacterSize(22)
@@ -262,7 +284,7 @@ Hay tres cosas distintas y es fácil confundirlas:
 
   texto.setFillColor(sf::Color(...))
       Color de las letras.
-      -> Menu.cpp (constructor), Hud.cpp (crearTexto)
+      -> Menu.cpp (constructor), MenuDificultad.cpp (crearTexto), Hud.cpp (crearTexto), Ayuda.cpp (crearTexto)
 
   texto.setOutlineThickness(2.f)
   texto.setOutlineColor(sf::Color(...))
@@ -289,7 +311,7 @@ Hay tres cosas distintas y es fácil confundirlas:
       Dónde se dibuja el objeto. Lo que queda en (x, y) es su ORIGEN.
       Recibe float. Si le pasás una cuenta con int (como 520 + i * 40), Visual Studio avisa
       "conversión de 'int' a 'float'". Se evita escribiendo los números con .f: 520.f + i * 40.f
-      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp, MenuDificultad.cpp, Ayuda.cpp
 
   objeto.setOrigin(x, y)
       Elige qué punto del objeto es el origen. Por defecto es la esquina de arriba a la izquierda.
@@ -297,25 +319,32 @@ Hay tres cosas distintas y es fácil confundirlas:
         - Personaje: el origen va en los pies (abajo al centro), así queda parado en la casilla.
         - Mapa: el origen va en el centro del rombo de la baldosa.
         - Menu: el origen va en el centro del texto, así setPosition(640, ...) lo deja centrado.
-      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+        - Como jugar: el origen va en el centro del dibujo de la página.
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp, MenuDificultad.cpp, Ayuda.cpp
 
   objeto.setScale(x, y)
       Agranda (o achica) el objeto: 2 = el doble de ancho o de alto. El título del cartel de fin de
       partida ("VICTORIA" / "DERROTA") es texto de tamaño 22 con setScale(2, 2), y no texto de
       tamaño 44: así cada píxel de la letra se vuelve un cuadradito de 2x2 y se sigue viendo nítida.
-      -> Hud.cpp (dibujarCartel)
+      Lo mismo el título de cada página de "Como jugar" y el del cartel de historia.
+      Con un número negativo se ESPEJA: setScale(-1, 1) da vuelta la imagen de izquierda a derecha.
+      La flecha "anterior" de "Como jugar" es la misma imagen que la "siguiente", espejada.
+      ¡CUIDADO! Espejada, la imagen queda dibujada hacia la IZQUIERDA de su posición (de x - ancho a x).
+      -> Hud.cpp (dibujarCartel y dibujarHistoria), Ayuda.cpp (constructor y dibujar)
 
   objeto.getLocalBounds()
       Devuelve el rectángulo (sf::FloatRect) que ocupa el objeto, medido sobre el objeto mismo,
       sin importar dónde esté ubicado. Sirve para saber su tamaño y calcular el origen.
       Con texto, sirve para alinearlo a la derecha: se lo corre a la izquierda todo su ancho.
-      -> Mapa.cpp, Personaje.cpp, Menu.cpp, Hud.cpp (dibujarTextoDerecha, dibujarNumeros, dibujarCartel)
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp, MenuDificultad.cpp, Hud.cpp (dibujarTextoDerecha, dibujarNumeros, dibujarCartel),
+         Ayuda.cpp (dibujar)
 
   objeto.getGlobalBounds()
       El mismo rectángulo, pero ya ubicado en el mundo (con setPosition y setOrigin aplicados).
       Sirve para saber dónde quedó el objeto: el menú lo usa para ubicar el selector al lado del
-      texto y para saber si el mouse está encima de una opción.
-      -> Menu.cpp (procesarEvento y dibujar)
+      texto y para saber si el mouse está encima de una opción. "Como jugar" lo usa para saber si se
+      hizo click en una flecha o en "[Esc] Volver" (con la flecha espejada también funciona bien).
+      -> Menu.cpp (procesarEvento y dibujar), MenuDificultad.cpp (procesarEvento y dibujar), Ayuda.cpp (procesarEvento)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -327,7 +356,8 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
   sf::View(sf::FloatRect(0, 0, 1280, 720))
       Crea una vista que muestra el rectángulo que empieza en (0, 0) y mide 1280x720.
       El menú usa esta vista fija, así sus medidas no cambian aunque cambie la ventana.
-      -> Menu.cpp (constructor)
+      "Como jugar" usa otra igual.
+      -> Menu.cpp (constructor), MenuDificultad.cpp (constructor), Ayuda.cpp (constructor)
 
   vista.setCenter(x, y)
       A qué punto del mundo mira el centro de la vista.
@@ -353,9 +383,10 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
   sf::RectangleShape rectangulo(sf::Vector2f(ancho, alto))
       Un rectángulo de color, sin imagen. Sirve para barras: la de vida de los personajes, las del
       HUD (vida, códice y puntos de maná), el panel de la derecha, sus líneas separadoras y el panel
-      de los carteles. Se ubica con setPosition como un sprite.
+      de los carteles, el botón "Terminar turno" y el resaltado de la habilidad debajo del mouse, y el
+      velo oscuro, el panel y las líneas de "Como jugar". Se ubica con setPosition como un sprite.
       -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarPanel, dibujarSeparador, dibujarBarra,
-         dibujarMana, dibujarCartel)
+         dibujarMana, dibujarHabilidades, dibujarVelo, dibujarCartel, dibujarHistoria), Ayuda.cpp (dibujar)
 
   rectangulo.setFillColor(sf::Color(...))
       Color de adentro.
@@ -363,7 +394,7 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
   rectangulo.setOutlineColor(sf::Color(...))
       Borde alrededor, de ese grosor y color. El borde se dibuja POR FUERA del rectángulo.
       -> Personaje.cpp (mostrarBarraVida), Hud.cpp (dibujarPanel, dibujarSeparador, dibujarBarra,
-         dibujarMana, dibujarCartel)
+         dibujarMana, dibujarHabilidades, dibujarVelo, dibujarCartel, dibujarHistoria), Ayuda.cpp (dibujar)
 
   sf::Clock reloj
   reloj.restart()
@@ -372,11 +403,11 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
       obtiene el tiempo entre un cuadro y el siguiente ("dt", delta time).
       Las animaciones usan dt para moverse a la misma velocidad aunque la PC sea más rápida o más
       lenta: la bola avanza VELOCIDAD * dt píxeles en cada cuadro.
-      -> Juego.cpp (ejecutar)
+      -> Juego.cpp (iniciar: el game loop)
 
   tiempo.asSeconds()
       Pasa un sf::Time a segundos, como float (por ejemplo 0.016 a 60 cuadros por segundo).
-      -> Juego.cpp (ejecutar)
+      -> Juego.cpp (iniciar: el game loop)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -385,37 +416,45 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
   sf::Vector2f   dos números con decimales: .x y .y   (posiciones en el mundo)
   sf::Vector2i   dos enteros: .x y .y                  (píxeles del mouse, casillas)
   sf::Vector2u   dos enteros sin signo: .x y .y        (tamaños, como el de la ventana)
-      -> Juego.cpp, Mapa.cpp, Camara.cpp, Personaje.cpp, Proyectil.cpp, Hud.cpp
+      -> Juego.cpp, Mapa.cpp, Camara.cpp, Personaje.cpp, Proyectil.cpp, Hud.cpp, Enemigo.cpp
       Se pueden sumar, restar, y multiplicar o dividir por un número: así se mueve la bola
       (posicion += direccion * paso) y se calcula el pecho del mago (pies - altura).
       También se comparan con == y != (son iguales si coinciden la x y la y): la búsqueda de
       camino de los enemigos vuelve para atrás hasta llegar a la casilla de inicio.
-      -> Juego.cpp (pasoHacia)
+      -> Enemigo.cpp (pasoHacia)
 
   sf::IntRect    un rectángulo con enteros: (x, y, ancho, alto). Elige un pedazo de una textura, y es
                  lo que devuelve window.getViewport().
-      -> Proyectil.cpp (mostrar), Mapa.cpp (mostrar), Juego.cpp (procesarEventos)
+      -> Proyectil.cpp (mostrar), Mapa.cpp (mostrar), Juego.cpp (procesarEventos y procesarEventoJugando)
 
   sf::FloatRect  un rectángulo: .left, .top (esquina de arriba a la izquierda), .width, .height
       Lo devuelven getLocalBounds() y getGlobalBounds(), y se usa para crear una sf::View y para
-      su viewport.
-      -> Mapa.cpp, Personaje.cpp, Menu.cpp
+      su viewport. Sus campos se pueden cambiar sueltos: "Como jugar" agranda 10 px para cada lado
+      la zona de click de las flechas (left -= 10, width += 20...).
+      -> Mapa.cpp, Personaje.cpp, Menu.cpp, MenuDificultad.cpp, Ayuda.cpp (procesarEvento)
+
+  sf::FloatRect(x, y, ancho, alto)
+      También se puede crear uno a mano. El HUD arma así la "caja" de cada habilidad y la del botón
+      "Terminar turno", y la usa para dibujar el resaltado y para saber si el mouse está encima.
+      -> Hud.cpp (cajaHabilidad y cajaTerminarTurno)
 
   rectangulo.contains(punto)
       Devuelve true si el punto (sf::Vector2f) cae adentro del rectángulo.
-      El menú lo usa para saber si el mouse está sobre una opción.
-      -> Menu.cpp (procesarEvento)
+      El menú lo usa para saber si el mouse está sobre una opción, y el HUD para saber si el click
+      cayó sobre una habilidad o sobre "Terminar turno".
+      -> Menu.cpp (procesarEvento), MenuDificultad.cpp (procesarEvento), Ayuda.cpp (procesarEvento), Hud.cpp (habilidadEn, estaSobreTerminarTurno
+         y dibujarHabilidades)
 
   rectanguloInt.contains(x, y)
       Lo mismo con un sf::IntRect y dos enteros: si el click cayó adentro del viewport del tablero.
-      -> Juego.cpp (procesarEventos)
+      -> Juego.cpp (procesarEventos y procesarEventoJugando)
 
   sf::Color(rojo, verde, azul)
       Un color, cada parte de 0 a 255. Un cuarto número opcional es la transparencia (alfa):
       0 = invisible, 255 = opaco. Los colores del juego están en la paleta de CONTRIBUTING.md.
       Cada parte se puede leer suelta con .r, .g, .b, .a: los números de daño arman un color nuevo
       con el mismo rojo, verde y azul pero otro alfa, para irse desvaneciendo.
-      -> Menu.cpp, Personaje.cpp, Hud.cpp
+      -> Menu.cpp, MenuDificultad.cpp, Personaje.cpp, Hud.cpp, Ayuda.cpp
 
   sf::Uint8
       Un entero de 0 a 255 (8 bits). Es el tipo de cada parte de un sf::Color.
@@ -424,3 +463,61 @@ la ventana, todo se ve agrandado; si es más grande, se ve achicado.
   sf::VideoMode(ancho, alto)
       El tamaño con el que se crea la ventana.
       -> Juego.cpp (constructor)
+
+
+----------------------------------------------------------------------------------------------------
+9. SONIDO: sf::SoundBuffer, sf::Sound y sf::Music   (#include <SFML/Audio.hpp>)
+----------------------------------------------------------------------------------------------------
+Todo esto está en la clase Sonidos. Para los efectos cortos (la bola, un golpe) se usa un
+sf::SoundBuffer con su sf::Sound; para la música, un sf::Music.
+
+  sf::SoundBuffer   el sonido cargado en memoria (como una sf::Texture, pero de audio).
+  sf::Sound         lo que suena: apunta a un buffer (como un sf::Sprite apunta a su textura).
+
+  ¡CUIDADO! Igual que el sprite con la textura, el sf::Sound solo apunta al buffer. Si el buffer es
+  una variable local y se destruye, el sonido queda apuntando a memoria inválida. Por eso los
+  buffers son atributos de Sonidos.
+
+  buffer.loadFromFile("Sonidos/archivo.ogg")
+      Carga el sonido entero desde el disco (sirve .ogg y .wav). Devuelve false si no lo encuentra.
+      -> Sonidos.cpp (cargar)
+
+  sonido.setBuffer(buffer)
+      Le dice al sonido qué buffer reproducir.
+      -> Sonidos.cpp (cargar)
+
+  sonido.setVolume(70.f)   /   musica.setVolume(7.f)
+      Volumen de 0 (mudo) a 100 (el máximo, el del archivo).
+      -> Sonidos.cpp (cargar, constructor y cambiarVolumenMusica)
+
+  sonido.play()
+      Lo hace sonar. Si ya estaba sonando, vuelve a empezar desde el principio.
+      -> Sonidos.cpp (reproducirBola, reproducirImpacto, reproducirAtaque, reproducirExplosion,
+         reproducirQuemadura...)
+
+  sf::Music musica
+  musica.openFromFile("Sonidos/musica_medieval.wav")
+      La música NO se carga entera: openFromFile abre el archivo y lo va leyendo del disco mientras
+      suena. Así un tema largo no ocupa mucha memoria. Devuelve false si no lo encuentra.
+      ¡CUIDADO! Es openFromFile, no loadFromFile (como en las imágenes y los efectos).
+      -> Sonidos.cpp (constructor)
+
+  musica.setLoop(true)
+      Cuando termina, vuelve a empezar sola.
+      -> Sonidos.cpp (constructor)
+
+  musica.play()   /   musica.stop()
+      Arranca y para la música. stop() la deja al principio. Se para al ganar o perder, para que
+      se escuche el jingle de victoria o de derrota.
+      -> Sonidos.cpp (iniciarMusica, reproducirVictoria, reproducirDerrota)
+
+  musica.getStatus()
+      Si está sonando (sf::Music::Playing), en pausa (sf::Music::Paused) o parada
+      (sf::Music::Stopped). Sirve para no reiniciar la música si ya está sonando, por ejemplo al
+      volver al menú desde una partida.
+      -> Sonidos.cpp (iniciarMusica)
+
+  musica.getVolume()
+      El volumen actual (0 a 100). Las teclas - y = le restan o suman 1, y el Juego lo muestra en
+      pantalla ("Musica: 7"): en el .exe de Release no hay consola donde verlo.
+      -> Sonidos.cpp (cambiarVolumenMusica y getVolumenMusica)

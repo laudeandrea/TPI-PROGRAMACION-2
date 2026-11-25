@@ -28,6 +28,12 @@ class Sonidos {
 		sf::SoundBuffer bufferDerrota;
 		sf::Sound derrota;
 
+		sf::SoundBuffer bufferExplosion; // el golem, al llegar o al morir
+		sf::Sound explosion;
+
+		sf::SoundBuffer bufferQuemadura; // un enemigo que se quema en el muro de fuego
+		sf::Sound quemadura;
+
 		sf::Music musica;
 
 		// Carga el archivo en el buffer y lo engancha al sonido. Si falla, avisa por consola.
@@ -36,7 +42,7 @@ class Sonidos {
 	public:
 		Sonidos();
 		void iniciarMusica(); // arranca la musica si no esta sonando
-		// Sube o baja el volumen de la musica (0 a 100) y lo muestra por consola.
+		// Sube o baja el volumen de la musica (0 a 100). El Juego lo muestra un momento en pantalla.
 		// Sirve para calibrar sin recompilar: - baja y = sube.
 		void cambiarVolumenMusica(float cambio);
 		float getVolumenMusica() const;
@@ -47,4 +53,6 @@ class Sonidos {
 		void reproducirInicio();
 		void reproducirVictoria();
 		void reproducirDerrota();
+		void reproducirExplosion();
+		void reproducirQuemadura();
 };

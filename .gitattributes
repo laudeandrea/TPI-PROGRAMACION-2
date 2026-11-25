@@ -9,3 +9,5 @@
 *.ttf binary
 *.dll binary
 *.lib binary
+# Archivos de datos del juego (Datos/*.dat): binarios, git no tiene que cambiarles nada
+*.dat binary

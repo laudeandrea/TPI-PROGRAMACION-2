@@ -17,6 +17,8 @@ Sonidos::Sonidos() {
 	cargar(bufferInicio, inicio, "Sonidos/inicio.ogg", 80.f);
 	cargar(bufferVictoria, victoria, "Sonidos/victoria.wav", 80.f);
 	cargar(bufferDerrota, derrota, "Sonidos/derrota.ogg", 80.f);
+	cargar(bufferExplosion, explosion, "Sonidos/explosion_golem.wav", 70.f);
+	cargar(bufferQuemadura, quemadura, "Sonidos/quemadura.wav", 60.f);
 
 	if (!musica.openFromFile("Sonidos/musica_medieval.wav")) {
 		std::cout << "No se pudo cargar Sonidos/musica_medieval.wav\n";
@@ -72,4 +74,12 @@ void Sonidos::reproducirVictoria() {
 void Sonidos::reproducirDerrota() {
 	musica.stop();
 	derrota.play();
+}
+
+void Sonidos::reproducirExplosion() {
+	explosion.play();
+}
+
+void Sonidos::reproducirQuemadura() {
+	quemadura.play();
 }

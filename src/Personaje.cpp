@@ -77,7 +77,14 @@ bool Personaje::estaEn(int _fila, int _columna) const {
 };
 
 bool Personaje::puedePisar(TipoTerreno terreno) const {
-	return terreno == TipoTerreno::SUELO;
+	// Por defecto, lo que es transitable (el suelo). Las hijas lo pueden redefinir (el espectro vuela)
+	return Casilla(terreno).esTransitable();
+};
+
+void Personaje::setVida(int _vida) {
+	vida = _vida;
+	if (vida < 0) vida = 0;
+	if (vida > vidaMaxima) vida = vidaMaxima;
 };
 
 void Personaje::recibirDanio(int cantidad){

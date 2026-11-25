@@ -4,6 +4,8 @@
 #include <vector>
 #include "Casilla.h"
 
+class Personaje; // "declaracion adelantada": Mapa::mover recibe un Personaje, y Personaje.h ya incluye Mapa.h
+
 class Mapa {
 	private:
 		static const int CANT_CASILLAS = 8; // static const = La constante es una sola para toda la clase, en vez de una copia por cada objeto Mapa
@@ -42,10 +44,15 @@ class Mapa {
 		// Cuantas casillas tiene cada lado del tablero (8).
 		int getCantCasillas() const;
 		
-		/*Si la fila y la columna caen dentro del tablero. No mira el terreno. */
-		bool estaDentro(int _fila, int _columna) const;	
-		/*Terreno de una casilla. Hay que llamar antes a estaDentro(). */
+		/*Si la fila y la columna caen dentro del tablero (si la casilla existe). No mira el terreno. */
+		bool esValida(int _fila, int _columna) const;
+		/*Mueve al personaje a esa casilla si existe y la puede pisar (el espectro vuela, los demas no).
+		 *No mira si hay otro personaje ahi: eso lo sabe el que llama. Devuelve si lo movio. */
+		bool mover(Personaje& personaje, int _fila, int _columna) const;
+		/*La casilla en esa fila y columna. Hay que llamar antes a esValida(). */
+		const Casilla& getCasilla(int _fila, int _columna) const;
+		/*Terreno de una casilla. Hay que llamar antes a esValida(). */
 		TipoTerreno getTipoTerreno(int _fila, int _columna) const;
-		/*Cambia el terreno de una casilla. Hay que llamar antes a estaDentro().*/
+		/*Cambia el terreno de una casilla. Hay que llamar antes a esValida().*/
 		void setTipoTerreno(int _fila, int _columna, TipoTerreno _tipo);
 };

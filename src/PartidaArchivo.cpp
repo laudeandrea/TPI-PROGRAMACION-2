@@ -1,56 +1,54 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include "PartidaArchivo.h"
-#include <cstdio>
+
+PartidaArchivo::PartidaArchivo()
+	: archivoPartida("partida.dat"), archivoMago("Mago.dat"), archivoEnemigos("Enemigos.dat") {
+}
 
 bool PartidaArchivo::existe() const {
-	FILE* archivo = fopen(NOMBRE_ARCHIVO, "rb");
-	if (archivo == NULL) {
-		return false;
-	}
-	fclose(archivo);
-	return true;
+	return archivoPartida.existe();
 }
 
 bool PartidaArchivo::guardar(const Partida& partida) const {
-	FILE* archivo = fopen(NOMBRE_ARCHIVO, "wb"); // crea o pisa el archivo
-	if (archivo == NULL) {
-		return false;
-	}
+	// El nivel arranca de cero: si quedaron el mago y los enemigos de antes, se borran
+	archivoMago.borrar();
+	archivoEnemigos.borrar();
+	return archivoPartida.guardarTodos({ partida }); // { partida } = un vector con un solo registro
+}
 
-	size_t escritos = fwrite(&partida, sizeof(Partida), 1, archivo);
-	fclose(archivo); // siempre cerrar
-	return escritos == 1;
+bool PartidaArchivo::guardarEnCurso(const Partida& partida, const MagoGuardado& mago,
+	const std::vector<EnemigoGuardado>& enemigos) const {
+	// Los tres tienen que salir bien: con "&&", si falla uno no se sigue
+	return archivoPartida.guardarTodos({ partida })
+		&& archivoMago.guardarTodos({ mago })
+		&& archivoEnemigos.guardarTodos(enemigos);
 }
 
 Partida PartidaArchivo::leer() const {
-	Partida porDefecto; // nivel 1
-
-	FILE* archivo = fopen(NOMBRE_ARCHIVO, "rb");
-	if (archivo == NULL) {
-		return porDefecto;
+	Partida partida; // nivel 1, sin empezar
+	// Si el archivo esta roto o es de una version vieja del juego (era de 4 bytes), no se puede leer
+	// un registro entero: se arranca del nivel 1
+	if (!archivoPartida.leerPrimero(partida)) {
+		return Partida();
 	}
-
-	Partida leida;
-	size_t leidos = fread(&leida, sizeof(Partida), 1, archivo);
-	fclose(archivo);
-
-	if (leidos != 1) {
-		return porDefecto;
+	// Si quedo por la mitad pero falta Mago.dat, se empieza ese nivel desde el principio
+	if (partida.getEnCurso() && !archivoMago.existe()) {
+		partida.setEnCurso(false);
 	}
-	return leida;
+	return partida;
 }
 
-int PartidaArchivo::getCantidadRegistros() const {
-	FILE* archivo = fopen(NOMBRE_ARCHIVO, "rb");
-	if (archivo == NULL) {
-		return 0;
-	}
-	fseek(archivo, 0, SEEK_END);      
-	long bytes = ftell(archivo);       
-	fclose(archivo);
-	return (int)(bytes / sizeof(Partida));
+MagoGuardado PartidaArchivo::leerMago() const {
+	MagoGuardado mago;
+	archivoMago.leerPrimero(mago);
+	return mago;
+}
+
+std::vector<EnemigoGuardado> PartidaArchivo::leerEnemigos() const {
+	return archivoEnemigos.leerTodos();
 }
 
 bool PartidaArchivo::borrar() const {
-	return remove(NOMBRE_ARCHIVO) == 0;
+	archivoMago.borrar();
+	archivoEnemigos.borrar();
+	return archivoPartida.borrar();
 }

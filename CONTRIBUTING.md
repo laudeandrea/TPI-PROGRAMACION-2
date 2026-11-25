@@ -12,7 +12,10 @@ Para entender cómo está armado el código, primero leé la sección "Cómo fun
   existente, probablemente haga falta una clase nueva.
 - **Cada clase tiene su `.h` y su `.cpp`** en `src/`. El `.h` tiene la declaración y el `.cpp` la
   implementación. Excepción: los `enum` no llevan archivo propio; van en el `.h` de la clase que los
-  usa (como `TipoTerreno` en `Casilla.h`), declarados antes de la clase.
+  usa (como `TipoTerreno` en `Casilla.h`), declarados antes de la clase. Otra excepción: las **plantillas**
+  (`template`, como `Archivo<T>` en `Archivo.h`) van enteras en el `.h`, porque el compilador necesita ver
+  todo su código en cada lugar donde se usan. Y los `struct` que usan varias clases (como `Ataque`) van en
+  su propio `.h`, sin `.cpp`, porque son solo datos.
 - **Atributos privados.** Si otra clase necesita un dato, se le da un método público (`get...`).
 - **Excepción, clases base:** en las clases de las que heredan otras (como `Personaje`), los atributos
   que necesitan las hijas van en `protected`, no en `private`. Con `private`, `Mago` no podría usar la
@@ -21,7 +24,28 @@ Para entender cómo está armado el código, primero leé la sección "Cómo fun
 - **Herencia:** `Mago` y `Enemigo` son hijas de `Personaje`. Lo que comparten (posición, vida, dibujarse)
   va en `Personaje`; lo propio de cada una (el maná del mago, el ataque del enemigo), en la hija.
 - **Métodos privados** para lo que solo se usa dentro de la clase (como `procesarEventos()` en `Juego`).
-- **`main.cpp` no tiene lógica:** solo crea el `Juego` y lo ejecuta.
+- **`main.cpp` no tiene lógica:** solo crea el `Juego` y llama a `iniciar()`.
+- **Diagrama de clases del informe:** todo lo que está en el diagrama tiene que existir en el código (puede
+  haber de más, pero no de menos). Antes de borrar o renombrar algo que está en el diagrama, avisen al grupo y
+  actualicen la tabla "El diagrama de clases del informe" del README.
+
+## Archivos binarios (`.dat`)
+
+- **Una clase por tipo de registro** (`DatosNivel`, `Partida`, `EnemigoGuardado`...), con su `.h` y su `.cpp`.
+- **Registros "planos":** solo `int`, `bool`, `float` y arreglos (`char nombre[30]`, `int muros[12][3]`).
+  **Nunca** `std::string`, `std::vector` ni punteros: `fwrite` copia los bytes del objeto tal como están en
+  memoria, y esos tipos guardan una dirección a otra parte (que al volver a abrir el juego no apunta a nada).
+  Para el texto: `strncpy_s(nombre, sizeof(nombre), texto.c_str(), _TRUNCATE)` al guardar y `std::string(nombre)`
+  al leer.
+- **Para leer y escribir, `Archivo<T>`** (no se repite el `fopen`/`fread` en cada clase). Usa `fopen_s`, la versión
+  de `fopen` que acepta Visual Studio sin `_CRT_SECURE_NO_WARNINGS`.
+- **Si se cambia una clase de registro** (se agrega o se saca un atributo), cambia su tamaño y los `.dat` viejos
+  ya no se pueden leer: hay que borrarlos y dejar que el juego los vuelva a crear. Si el tamaño del archivo no es
+  múltiplo del registro nuevo, `Archivo<T>::leerTodos()` lo ignora y el `Catalogo` lo rehace solo; pero si por
+  casualidad sí lo es, se leería basura. Por eso: siempre borrarlos.
+- **Los valores del juego van en `Datos/`, no en el código.** Para cambiar uno: editar el `...PorDefecto()` de
+  `Catalogo.cpp`, borrar el `.dat` de `Datos/` y abrir el juego desde Visual Studio (lo vuelve a crear). Los `.dat`
+  de `Datos/` se suben al repositorio; los de la partida guardada (`partida.dat`, `Mago.dat`, `Enemigos.dat`), no.
 
 ## Archivos nuevos
 
@@ -65,9 +89,10 @@ Para entender cómo está armado el código, primero leé la sección "Cómo fun
 
 ## Orden de los atributos en `Juego.h`
 
-C++ crea los atributos en el orden en que están declarados en el `.h`. La `Camara` usa el `Mapa` al
-crearse, así que **`mapa` tiene que estar declarado antes que `camara`**. Si se invierten, compila igual,
-pero la cámara le pide el tamaño a un mapa que todavía no existe.
+C++ crea los atributos en el orden en que están declarados en el `.h`. La `Camara` le pide el tamaño al mapa
+del nivel al crearse, así que **`nivelActual` tiene que estar declarado antes que `camara`**. Si se invierten,
+compila igual, pero la cámara le pide el tamaño a un mapa que todavía no existe. Lo mismo con el **`catalogo`:
+va antes que `nivelActual`, `menuDificultad` y `ayuda`**, que lo usan al crearse.
 
 ## Arte
 
@@ -93,7 +118,7 @@ Todo el juego usa estos colores. Si algo nuevo no combina, probablemente esté u
 | Vacío | `#5C4096` | `sf::Color(92, 64, 150)` | El vacío debajo del tablero y la niebla de los abismos |
 | Vacío claro | `#9676D6` | `sf::Color(150, 118, 214)` | Brillos y motas que suben del vacío |
 | Peligro | `#B04A4A` | `sf::Color(176, 74, 74)` | Vida, daño, avisos |
-| Fuego | `#F08C38` | `sf::Color(240, 140, 56)` | Solo el muro de fuego (sus llamas van de `#601A1E` en la punta a `#FFF0C4` en el centro) |
+| Fuego | `#F08C38` | `sf::Color(240, 140, 56)` | Solo el muro de fuego (sus llamas van de `#601A1E` en la punta a `#FFF0C4` en el centro) y el número de turnos que le quedan |
 
 El celeste **Gema** sale de la piedra del báculo del mago. Si se usa para todo, deja de llamar la atención.
 
@@ -131,6 +156,52 @@ tiene que quedar.
 - Opción que no se puede usar (por ejemplo "Continuar" sin partida guardada): color **Tenue**, sin selector.
 - Opcional: que el selector "respire" cambiando su transparencia (alfa entre 150 y 255) en un ciclo de
   ~1,5 segundos.
+
+### Pantalla de dificultad
+
+Aparece al elegir "Nueva partida" (clase `MenuDificultad`). Es el menú principal con otras opciones: mismo fondo,
+mismo título y mismo selector. `Imagenes/vista_previa_dificultad.png` muestra cómo tiene que quedar.
+
+| Qué | Forma | Dónde |
+|---|---|---|
+| Fondo y título | `menu_fondo.png` y `menu_titulo.png` | Igual que en el menú. |
+| "Elegi la dificultad" | texto 22, **Gema**, borde **Fondo** | Centrado en (640, 470). |
+| Opciones | texto 22 sin borde: **Gema** la marcada, **Piedra** las demás | Centradas en x = 640, desde y = 520, cada 40 px (como las del menú). |
+| Selector | `menu_selector.png` | 14 px a la izquierda de la opción marcada, como en el menú. |
+| Descripción | texto 22, **Piedra**, borde **Fondo** | Centrada en (640, 652). Sale de `Dificultades.dat` (hasta 47 letras). |
+| Detalle | texto 22, **Tenue**, borde **Fondo** | Centrado en (640, 684): "Codice 100%   Enemigos: vida 100%, danio 100%   Mana +2 por turno". |
+| "[Esc] Volver" | texto 22, **Tenue**, borde **Fondo** | Arriba a la izquierda, en (24, 24). |
+
+### Pantalla Como jugar
+
+La abre la opción "Como jugar" del menú (clase `Ayuda`). Pantalla de **1280×720** con su propia vista fija,
+igual que el menú. Tiene 6 páginas. `Imagenes/vista_previa_ayuda.png` muestra cómo tiene que quedar (página 3).
+
+| Qué | Archivo / forma | Dónde |
+|---|---|---|
+| Fondo | `menu_fondo.png` + rectángulo color **Fondo** con alfa 215 | Toda la pantalla: el menú se adivina atrás. |
+| Panel | rectángulo **Fondo**, borde de 2 px **Pizarra** | De (120, 50) a (1160, 670). |
+| Título | texto 22 con `setScale(2, 2)`, color **Gema** | Centrado en (640, 100). |
+| Líneas separadoras | rectángulos de 960×2, **Pizarra** | x = 160, en y = 140 (abajo del título) y en y = 596 (arriba del pie). |
+| Dibujo | `ayuda_1.png` … `ayuda_6.png` (unos 380×320 a 380×430) | Su centro en (360, 375). |
+| Texto | texto 22; **Gema** los subtítulos, **Piedra** el resto | Desde (600, 168), una línea cada **30 px**. |
+| Pie | texto 22, **Tenue** | "[Esc] Volver" en (160, 616); "Flechas: pagina   [-] [=]: musica" alineado a la derecha en x = 1120. |
+| Número de página | texto 22, **Piedra** | "1 / 6" centrado en x = 640, y = 616. |
+| Flechas | `ayuda_flecha.png` (12×20, apunta a la derecha) | La siguiente en (700, 620); la anterior es la misma espejada (`setScale(-1, 1)`) en (580, 620). Si no hay página para ese lado, alfa 50. |
+
+- **Texto de cada página:** está en el constructor de `Ayuda`, una línea por string. Cada línea entra en
+  520 px (de x = 600 a 1120): unos **42 caracteres**. Entran **13 líneas** como mucho. Las que empiezan con
+  `#` son subtítulos (se dibujan en Gema y sin el `#`); un string vacío `""` deja un renglón en blanco.
+- **Sin tildes,** como el resto de los textos del juego.
+- **Los dibujos** son un tablerito de 3×3 armado con las mismas baldosas y personajes del juego, agrandado
+  x2 sin suavizar. Si cambia una baldosa o un personaje, hay que volver a armarlos.
+- **Los números de las reglas** (vida, daño, maná, alcance, en qué piso se aprende cada habilidad) se arman con
+  `std::to_string` a partir del `Catalogo`: si se cambia un `.dat`, la ayuda se actualiza sola. Lo único escrito
+  a mano es el movimiento y el maná del mago (página 2). Los números son los de la dificultad **Normal** (la
+  página 1 lo aclara). Ojo con el largo: un número
+  de dos cifras ocupa una letra más.
+- **Los dibujos de las páginas 3 a 5** también tienen marcadores: el rayado de peligro con el daño y el "!"
+  (ataques anunciados), la bola y el empuje, y el muro de fuego.
 
 ### Baldosas isométricas
 
@@ -230,7 +301,8 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
 |---|---|---|---|
 | `marcador_movimiento.png` | 64×40 | Rombo **Piedra** transparente: casilla a la que el mago puede caminar (después de clickearlo). | `(32, 20)` |
 | `marcador_alcance.png` | 64×40 | Rombo **Gema** transparente: casilla a la que llega la habilidad. | Centro del rombo, `(32, 20)` |
-| `marcador_objetivo.png` | 64×40 | Igual, en rojo (**Peligro**): hay un enemigo al alcance. También marca, desvaneciéndose en 0,5 s, las casillas que recibieron un golpe, la explosión del golem o la quemadura del fuego, y con el muro preparado, las 3 casillas donde quedaría. | `(32, 20)` |
+| `marcador_peligro.png` | 64×40 | Rombo **Peligro** con rayas a 45° (como cinta de peligro) y borde rojo claro opaco: casilla a la que un enemigo **anunció** que va a pegar. Se dibuja arriba de los otros marcadores, para que se vea aunque la casilla también esté marcada para caminar. | `(32, 20)` |
+| `marcador_objetivo.png` | 64×40 | Igual que el de alcance, en rojo (**Peligro**): hay un enemigo al alcance. También marca, desvaneciéndose en 0,5 s, las casillas que recibieron un golpe, la explosión del golem o la quemadura del fuego, y con el muro preparado, las 3 casillas donde quedaría. | `(32, 20)` |
 | `bola_energia.png` | 32×16 | Bola de energía: **2 cuadros de 16×16** uno al lado del otro, se alternan cada 0,1 s. | Centro del cuadro, `(8, 8)` |
 | `bola_espectro.png` | 32×16 | Bola de ectoplasma del espectro: mismo formato que la bola de energía, en los colores del **Vacío**, con dos ojitos oscuros y jirones rojizos para que no se confunda con la del mago. | `(8, 8)` |
 
@@ -252,14 +324,34 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
   - **Mana** (y = 204): igual, con "8/10" en **Gema**, y abajo un rectángulo de 24×12 por cada punto (separados
     3 px: los 10 miden lo mismo que las barras). Llenos en **Gema**, vacíos en **Pizarra**; con una habilidad
     preparada, los que se van a gastar en **Gema oscura**.
-  - **Habilidades** (y = 284): encabezado "Habilidades … Mana" en **Tenue**; abajo una por línea (cada 30 px),
-    "[1] Bola de energia" a la izquierda y el costo a la derecha. En **Gema** la preparada, en **Tenue** las que
-    no alcanza el maná, en **Piedra** las demás. Al final "[Espacio] Pasar turno" en **Tenue**.
-  - **Qué hacer** (y = 456): en varios renglones (el panel es angosto, se cortan con `\n`), con `setLineSpacing(1.2)`.
+  - **Habilidades** (y = 284): encabezado "Habilidades … Mana" en **Tenue**; abajo una por línea (cada 30 px,
+    desde y = 318; entran las 3), "[1] Bola de energia" a la izquierda y el costo a la derecha. En **Gema** la
+    preparada, en **Tenue** las que no alcanza el maná, en **Piedra** las demás. Se pueden clickear: en el turno del
+    jugador, la que está debajo del mouse tiene un fondo **Pizarra** del ancho del panel.
+  - **Botón "Terminar turno"** (8 px abajo de la última habilidad): rectángulo del ancho del panel y 32 px de alto,
+    relleno **Fondo** con borde de 2 px **Pizarra** y "[Espacio] Terminar turno" centrado en **Tenue**. Con el mouse
+    encima, relleno **Pizarra** y texto en **Piedra**.
+  - **Qué hacer** (y = 480): en varios renglones (el panel es angosto, se cortan con `\n`), con `setLineSpacing(1.2)`.
     Sin nada elegido, "Click en el mago para moverlo" en **Tenue**; con el mago seleccionado, en **Piedra**; con
     una habilidad preparada, en **Gema** y diciendo con qué tecla se cancela.
-  - **"[Esc] Menu"** abajo de todo (y = 676), en **Tenue**.
-- **Carteles** (nivel superado, victoria, derrota; los dibuja `dibujarCartel()`): la pantalla entera se tapa con
+  - **"[Esc] Menu"** abajo de todo (y = 676), en **Tenue**, y a la derecha (alineado a x = 1256) el nombre de la
+    dificultad, también en **Tenue**.
+- **Ataques anunciados:** además del rayado en la casilla, el daño que llega (si le pegan dos, la suma) va
+  centrado en la casilla, en rojo claro, tamaño 22 con borde **Fondo**; y un "!" igual arriba de la cabeza de
+  cada enemigo que va a atacar (6 px más arriba que los números de daño). Los dibuja `Hud::dibujarAmenazas()`
+  con la vista por defecto, para que la letra no se estire con la cámara.
+- **Turnos del fuego:** en cada casilla del muro, cuántos turnos de los enemigos le quedan ("3", "2", "1"), en
+  **Fuego**, tamaño 22 con borde **Fondo**, 8 px (del mundo) más abajo del centro de la casilla, para no tapar el
+  centro de las llamas. Lo dibuja `Hud::dibujarTurnosFuego()`.
+- **Aviso del volumen:** al apretar **-** o **=**, "Musica: 7" en **Piedra** con borde **Fondo**, abajo a la
+  izquierda (a 16 px de los bordes), en cualquier pantalla. Se ve 1,5 s y se desvanece en el último medio segundo.
+  Lo dibuja `Hud::dibujarVolumen()`.
+- **Cartel de historia** (antes de cada piso y en "Nivel superado"; lo dibuja `dibujarHistoria()`): mismo velo,
+  panel de 760×380 en (260, 170). Título ×2 en **Gema** centrado en (640, 215); un aviso opcional en **Gema**
+  centrado en (640, 262) (la habilidad nueva); la historia en **Piedra**, alineada a la izquierda en x = 300, desde
+  y = 290, una línea cada 30 px (hasta 6, de hasta 47 letras); y qué tecla apretar en **Tenue**, centrado en
+  (640, 515).
+- **Carteles** (victoria y derrota; los dibuja `dibujarCartel()`): la pantalla entera se tapa con
   **Fondo** al 75 % de opacidad (alfa 190), y en el medio va un panel de 480×200 en (400, 260), relleno **Fondo**
   con borde **Pizarra** de 2 px. Adentro, centradas en x = 640: el título en y = 310, agrandado ×2 con `setScale`
   (no con tamaño 44, para que siga nítido); el detalle en **Piedra** en y = 370; y qué tecla apretar en **Tenue**
@@ -267,7 +359,6 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
 
   | Cartel | Título | Detalle | Tecla |
   |---|---|---|---|
-  | Nivel superado | "NIVEL SUPERADO" (**Gema**) | "Aprendiste el muro de fuego [3]" | "Enter para seguir" |
   | Victoria | "VICTORIA" (**Gema**) | "Sobreviviste a todas las oleadas" | "Enter para volver al menu" |
   | Derrota | "DERROTA" (rojo claro) | Por qué se perdió | "Enter para volver al menu" |
 - **Números de daño:** "-10" en rojo claro (`#E8786E`), fuente 22 con borde **Fondo** de 2 px. Aparecen
@@ -275,7 +366,7 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
 - **Todo el texto del HUD es tamaño 22** y lleva un borde oscuro de 2 px, para leerse sobre cualquier cosa.
 - **Cómo se generan:** igual que el arte del mapa, con scripts de Python que no están en el repositorio
   (`generar_arte_habilidad.py` para los marcadores y la bola de energía, `generar_arte_enemigos.py` para la
-  bola del espectro).
+  bola del espectro, `generar_arte_ayuda.py` para los dibujos de "Como jugar").
 
 ## Git
 

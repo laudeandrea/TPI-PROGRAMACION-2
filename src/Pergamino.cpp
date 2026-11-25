@@ -1,7 +1,8 @@
 #include "Pergamino.h"
 
- Pergamino::Pergamino(int _fila, int _columna, TipoHabilidad _habilidad){
-    vidaActual = VIDA_MAXIMA;
+ Pergamino::Pergamino(int _fila, int _columna, TipoHabilidad _habilidad, int _vidaMaxima){
+    vidaMaxima = _vidaMaxima;
+    vidaActual = vidaMaxima;
     fila = _fila;
     columna = _columna;
     habilidad = _habilidad;
@@ -15,7 +16,7 @@ int Pergamino::getColumna() const{ return columna; };
 
 int Pergamino::getVida() const{ return vidaActual; };
 
-int Pergamino::getVidaMaxima() const{ return VIDA_MAXIMA; };
+int Pergamino::getVidaMaxima() const{ return vidaMaxima; };
 
 void Pergamino::recibirDanio(int cantidadDanio){
     vidaActual -= cantidadDanio;
@@ -24,6 +25,12 @@ void Pergamino::recibirDanio(int cantidadDanio){
     }
  };
     
+ void Pergamino::setVida(int _vida){
+    vidaActual = _vida;
+    if (vidaActual < 0) vidaActual = 0;
+    if (vidaActual > vidaMaxima) vidaActual = vidaMaxima;
+ };
+
  bool Pergamino::estaDestruido() const{
     return vidaActual == 0;
 };
@@ -35,7 +42,7 @@ TipoHabilidad Pergamino::getHabilidad() const{
 void Pergamino::mostrar(sf::RenderWindow& ventana, const Mapa& mapa) const{
     sf::Sprite sprite;
 
-    if (vidaActual > VIDA_MAXIMA / 2){
+    if (vidaActual > vidaMaxima / 2){
         sprite.setTexture(texturaIntacto);
     }else{
         sprite.setTexture(texturaDaniado);

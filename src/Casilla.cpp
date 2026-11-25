@@ -12,3 +12,6 @@ void Casilla::setTipoTerreno(TipoTerreno _tipoTerreno) {
 	tipo = _tipoTerreno;
 }
 
+bool Casilla::esTransitable() const {
+	return tipo == TipoTerreno::SUELO;
+}

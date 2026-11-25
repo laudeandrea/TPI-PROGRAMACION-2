@@ -112,7 +112,9 @@
       <UndefinePreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <!-- Release: sin la ventana negra de consola. mainCRTStartup hace que el programa siga empezando en main() -->
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>
@@ -147,7 +149,9 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <!-- Release: sin la ventana negra de consola. mainCRTStartup hace que el programa siga empezando en main() -->
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>sfml-window.lib;sfml-system.lib;sfml-graphics.lib;sfml-audio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -158,7 +162,7 @@
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <!-- Despues de compilar, deja al lado del .exe todo lo que necesita para abrirse con doble clic -->
     <PostBuildEvent>
-      <Message>Copiando DLL de SFML, Imagenes, Fuentes y Sonidos al lado del .exe</Message>
+      <Message>Copiando DLL de SFML, Imagenes, Fuentes, Sonidos y Datos al lado del .exe</Message>
       <Command>xcopy /Y /D "$(SfmlDir)bin\sfml-system$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\sfml-window$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\sfml-graphics$(SfmlSufijo)-2.dll" "$(OutDir)"
@@ -166,7 +170,8 @@ xcopy /Y /D "$(SfmlDir)bin\sfml-audio$(SfmlSufijo)-2.dll" "$(OutDir)"
 xcopy /Y /D "$(SfmlDir)bin\openal32.dll" "$(OutDir)"
 xcopy /Y /D /I /E "$(ProjectDir)Imagenes" "$(OutDir)Imagenes"
 xcopy /Y /D /I /E "$(ProjectDir)Fuentes" "$(OutDir)Fuentes"
-xcopy /Y /D /I /E "$(ProjectDir)Sonidos" "$(OutDir)Sonidos"</Command>
+xcopy /Y /D /I /E "$(ProjectDir)Sonidos" "$(OutDir)Sonidos"
+xcopy /Y /D /I /E "$(ProjectDir)Datos" "$(OutDir)Datos"</Command>
     </PostBuildEvent>
     <ClCompile>
       <UndefinePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_WARNINGS</UndefinePreprocessorDefinitions>
@@ -194,6 +199,16 @@ xcopy /Y /D /I /E "$(ProjectDir)Sonidos" "$(OutDir)Sonidos"</Command>
     <ClCompile Include="src\Mapa.cpp" />
     <ClCompile Include="src\Nivel.cpp" />
     <ClCompile Include="src\Menu.cpp" />
+    <ClCompile Include="src\Ayuda.cpp" />
+    <ClCompile Include="src\DatosDificultad.cpp" />
+    <ClCompile Include="src\MenuDificultad.cpp" />
+    <ClCompile Include="src\Catalogo.cpp" />
+    <ClCompile Include="src\DatosHabilidad.cpp" />
+    <ClCompile Include="src\DatosEnemigo.cpp" />
+    <ClCompile Include="src\DatosNivel.cpp" />
+    <ClCompile Include="src\DatosAparicion.cpp" />
+    <ClCompile Include="src\MagoGuardado.cpp" />
+    <ClCompile Include="src\EnemigoGuardado.cpp" />
     <ClCompile Include="src\Personaje.cpp" />
     <ClCompile Include="src\Sonidos.cpp" />
   </ItemGroup>
@@ -215,6 +230,18 @@ xcopy /Y /D /I /E "$(ProjectDir)Sonidos" "$(OutDir)Sonidos"</Command>
     <ClInclude Include="src\Mapa.h" />
     <ClInclude Include="src\Nivel.h" />
     <ClInclude Include="src\Menu.h" />
+    <ClInclude Include="src\Ayuda.h" />
+    <ClInclude Include="src\DatosDificultad.h" />
+    <ClInclude Include="src\MenuDificultad.h" />
+    <ClInclude Include="src\Catalogo.h" />
+    <ClInclude Include="src\DatosHabilidad.h" />
+    <ClInclude Include="src\DatosEnemigo.h" />
+    <ClInclude Include="src\DatosNivel.h" />
+    <ClInclude Include="src\DatosAparicion.h" />
+    <ClInclude Include="src\MagoGuardado.h" />
+    <ClInclude Include="src\EnemigoGuardado.h" />
+    <ClInclude Include="src\Archivo.h" />
+    <ClInclude Include="src\Ataque.h" />
     <ClInclude Include="src\Personaje.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Sonidos.h" />

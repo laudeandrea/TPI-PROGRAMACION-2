@@ -6,7 +6,7 @@ int main()
     std::srand((unsigned)std::time(nullptr));
 
     Juego juego;
-    juego.ejecutar();
+    juego.iniciar();
 
     return 0;
 }

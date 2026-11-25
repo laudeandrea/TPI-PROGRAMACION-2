@@ -1,7 +1,7 @@
 #include "Habilidad.h"
 
-Habilidad::Habilidad(TipoHabilidad _tipo, std::string _nombre, int _danio, int _costoMana, int _alcance)
-    : tipo(_tipo), nombre(_nombre), danio(_danio), costoMana(_costoMana), alcance(_alcance) {
+Habilidad::Habilidad(TipoHabilidad _tipo, std::string _nombre, int _danio, int _costoMana, int _alcance, int _duracion)
+    : tipo(_tipo), nombre(_nombre), danio(_danio), costoMana(_costoMana), alcance(_alcance), duracion(_duracion) {
 }
 
 TipoHabilidad Habilidad::getTipo() const {
@@ -38,4 +38,15 @@ int Habilidad::getAlcance() const {
 
 void Habilidad::setAlcance(int _alcance){
     alcance = _alcance;
+}
+
+int Habilidad::getDuracion() const {
+    return duracion;
+}
+
+Ataque Habilidad::usar(int filaObjetivo, int columnaObjetivo) const {
+    Ataque ataque;
+    ataque.casillas.push_back(sf::Vector2i(columnaObjetivo, filaObjetivo)); // x = columna, y = fila
+    ataque.danio = danio;
+    return ataque;
 }

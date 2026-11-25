@@ -13,16 +13,29 @@
 /libs/SFML-2.6.2/lib/Debug/
 /libs/SFML-2.6.2/lib/cmake/
 
-# Partida guardada: se genera al jugar, no se sube
+# Partida guardada: se genera al jugar, no se sube (los .dat de Datos/ si se suben)
 partida.dat
+Mago.dat
+Enemigos.dat
 
 # Se quedan solo en esta PC
 /docs/
 /_plantilla_cmake/
 /.vscode
 /salida_arte/
-# Scripts de Python que generan el arte: el repositorio es solo C++
+# Scripts de Python que generan el arte y el simulador: el repositorio es solo C++
 /herramientas/
+
+# Todo lo de Python, este donde este (codigo, compilados, notebooks y entornos virtuales)
+*.py
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.ipynb
+.ipynb_checkpoints/
+.venv/
+venv/
 
 # Configuracion personal de cada PC
 CMakeUserPresets.json

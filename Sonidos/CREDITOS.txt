@@ -31,6 +31,13 @@ Licencia: CC0 (https://creativecommons.org/publicdomain/zero/1.0/)
 
   impacto.ogg          <- impactSoft_medium_000.ogg
 
+Generados para el juego
+-----------------------
+Sintetizados por codigo (ruido y ondas), sin material de terceros: se pueden usar sin restricciones.
+
+  explosion_golem.wav  <- el golem explota (al llegar o al morir)
+  quemadura.wav        <- un enemigo se quema en el muro de fuego
+
 Otros
 -----
   bola_energia.ogg

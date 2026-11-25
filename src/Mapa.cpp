@@ -1,4 +1,5 @@
 #include "Mapa.h"
+#include "Personaje.h"
 #include <cmath>
 #include <cstdlib>
 #include <string> // std::to_string, para armar el nombre de cada archivo de suelo
@@ -78,13 +79,13 @@ void Mapa::mostrar(sf::RenderWindow& ventana) {
 			// Paredes: van ANTES que la baldosa, asi la baldosa tapa la parte de arriba de la pared
 			if (casillas[fila][columna].getTipoTerreno() != TipoTerreno::ABISMO) {
 				// Lado izquierdo: mira la casilla de adelante-izquierda (fila + 1)
-				if (!estaDentro(fila + 1, columna)) {
+				if (!esValida(fila + 1, columna)) {
 					dibujarPared(ventana, texturaParedIzquierda, fila, columna); // borde del tablero: roca colgando
 				} else if (getTipoTerreno(fila + 1, columna) == TipoTerreno::ABISMO) {
 					dibujarPared(ventana, texturaPozoIzquierda, fila, columna);  // adelante hay pozo
 				}
 				// Lado derecho: mira la casilla de adelante-derecha (columna + 1)
-				if (!estaDentro(fila, columna + 1)) {
+				if (!esValida(fila, columna + 1)) {
 					dibujarPared(ventana, texturaParedDerecha, fila, columna);
 				} else if (getTipoTerreno(fila, columna + 1) == TipoTerreno::ABISMO) {
 					dibujarPared(ventana, texturaPozoDerecha, fila, columna);
@@ -155,7 +156,7 @@ int Mapa::getCantCasillas() const {
 	return CANT_CASILLAS;
 };
 
-bool Mapa::estaDentro(int _fila, int _columna) const {
+bool Mapa::esValida(int _fila, int _columna) const {
 	return _fila >= 0 && _fila < CANT_CASILLAS && _columna >= 0 && _columna < CANT_CASILLAS;
 };
 
@@ -166,3 +167,15 @@ TipoTerreno Mapa::getTipoTerreno(int _fila, int _columna) const {
 void Mapa::setTipoTerreno(int _fila, int _columna, TipoTerreno _tipo){
 	casillas[_fila][_columna].setTipoTerreno(_tipo);
 };
+
+bool Mapa::mover(Personaje& personaje, int _fila, int _columna) const {
+	if (!esValida(_fila, _columna) || !personaje.puedePisar(getTipoTerreno(_fila, _columna))) {
+		return false;
+	}
+	personaje.mover(_fila, _columna);
+	return true;
+}
+
+const Casilla& Mapa::getCasilla(int _fila, int _columna) const {
+	return casillas[_fila][_columna];
+}

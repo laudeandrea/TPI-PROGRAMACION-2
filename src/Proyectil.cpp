@@ -7,9 +7,18 @@ Proyectil::Proyectil(sf::Vector2f _origen, sf::Vector2f _destino, const sf::Text
 	: posicion(_origen), destino(_destino), textura(_textura), tiempoVivo(0.f), llego(false),
 	  danio(_danio), filaObjetivo(_filaObjetivo), columnaObjetivo(_columnaObjetivo)
 {
+	// La direccion es el camino completo dividido por su largo: queda un "paso" de largo 1 hacia el destino
+	sf::Vector2f camino = destino - posicion;
+	float largo = std::sqrt(camino.x * camino.x + camino.y * camino.y);
+	if (largo > 0.f) {
+		direccion = camino / largo;
+	}
+	else {
+		llego = true; // ya estaba en el destino
+	}
 }
 
-void Proyectil::actualizar(float dt) {
+void Proyectil::mover(float dt) {
 	tiempoVivo += dt;
 
 	// Cuanto falta y para que lado
@@ -23,8 +32,8 @@ void Proyectil::actualizar(float dt) {
 		llego = true;
 	}
 	else {
-		// falta / distancia = la direccion con largo 1; por paso = avanza "paso" pixeles hacia alla
-		posicion += falta / distancia * paso;
+		// direccion tiene largo 1: por paso = avanza "paso" pixeles hacia alla
+		posicion += direccion * paso;
 	}
 }
 
@@ -44,16 +53,11 @@ bool Proyectil::yaLlego() const {
 	return llego;
 }
 
-int Proyectil::getDanio() const {
-	return danio;
-}
-
-int Proyectil::getFilaObjetivo() const {
-	return filaObjetivo;
-}
-
-int Proyectil::getColumnaObjetivo() const {
-	return columnaObjetivo;
+Ataque Proyectil::colisionar() const {
+	Ataque golpe;
+	golpe.casillas.push_back(sf::Vector2i(columnaObjetivo, filaObjetivo)); // x = columna, y = fila
+	golpe.danio = danio;
+	return golpe;
 }
 
 sf::Vector2f Proyectil::getPosicion() const {

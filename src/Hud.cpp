@@ -12,6 +12,7 @@ static const sf::Color GEMA(95, 224, 232);
 static const sf::Color GEMA_OSCURA(46, 140, 166);
 static const sf::Color PELIGRO(176, 74, 74);
 static const sf::Color PELIGRO_CLARO(232, 120, 110);
+static const sf::Color FUEGO(240, 140, 56); // solo para lo del muro de fuego
 
 
 // Medidas del panel de la derecha. Empieza donde termina el tablero (el 75 % de la ventana, ver Camara)
@@ -26,7 +27,8 @@ static const float ALTO_LINEA = 30.f;                      // entre una linea de
 static const float Y_NIVEL = 24.f;
 static const float Y_VIDA = 84.f, Y_CODICE = 144.f, Y_MANA = 204.f; // el titulo; la barra va 32 px mas abajo
 static const float Y_HABILIDADES = 284.f;
-static const float Y_AYUDA = 456.f;
+static const float Y_PRIMERA_HABILIDAD = Y_HABILIDADES + ALTO_LINEA + 4.f;
+static const float Y_AYUDA = 480.f; // deja lugar para las 3 habilidades y el boton de terminar turno
 static const float Y_MENU = 676.f;
 
 Hud::Hud() {
@@ -72,7 +74,8 @@ void Hud::limpiar() {
 }
 
 void Hud::dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const Mago& mago,
-	const Pergamino& codice, const Nivel& nivel, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado) const {
+	const Pergamino& codice, const Nivel& nivel, HabilidadSeleccionada habilidadPreparada, bool magoSeleccionado,
+	bool turnoJugador, sf::Vector2f mouse, const std::string& nombreDificultad) const {
 	ventana.setView(ventana.getDefaultView());
 	dibujarNumeros(ventana, vistaCamara);
 	dibujarPanel(ventana);
@@ -91,7 +94,7 @@ void Hud::dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const 
 	dibujarMana(ventana, mago, habilidadPreparada);
 	dibujarSeparador(ventana, Y_HABILIDADES - 16.f);
 
-	dibujarHabilidades(ventana, mago, habilidadPreparada);
+	dibujarHabilidades(ventana, mago, habilidadPreparada, turnoJugador, mouse);
 	dibujarSeparador(ventana, Y_AYUDA - 16.f);
 
 	dibujarAyuda(ventana, mago, habilidadPreparada, magoSeleccionado);
@@ -100,6 +103,7 @@ void Hud::dibujar(sf::RenderWindow& ventana, const sf::View& vistaCamara, const 
 	sf::Text menu = crearTexto("[Esc] Menu", 22, TENUE);
 	menu.setPosition(X, Y_MENU);
 	ventana.draw(menu);
+	dibujarTextoDerecha(ventana, crearTexto(nombreDificultad, 22, TENUE), X_DERECHA, Y_MENU);
 }
 
 void Hud::dibujarPanel(sf::RenderWindow& ventana) const {
@@ -183,18 +187,62 @@ void Hud::dibujarMana(sf::RenderWindow& ventana, const Mago& mago, HabilidadSele
 	}
 }
 
-void Hud::dibujarHabilidades(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada) const {
+std::vector<HabilidadSeleccionada> Hud::habilidadesDelMago(const Mago& mago) const {
+	std::vector<HabilidadSeleccionada> lista;
+	for (int i = 1; i <= static_cast<int>(HabilidadSeleccionada::MURO); i++) { // 1 = bola, 2 = empuje, 3 = muro
+		if (mago.tieneHabilidad(HabilidadSeleccionada(i))) {
+			lista.push_back(HabilidadSeleccionada(i));
+		}
+	}
+	return lista;
+}
+
+sf::FloatRect Hud::cajaHabilidad(int posicion) const {
+	// Un poco mas ancha que el texto, para que sea facil apuntarle
+	return sf::FloatRect(X - 6.f, Y_PRIMERA_HABILIDAD + posicion * ALTO_LINEA, X_DERECHA - X + 12.f, ALTO_LINEA);
+}
+
+sf::FloatRect Hud::cajaTerminarTurno(const Mago& mago) const {
+	float y = Y_PRIMERA_HABILIDAD + habilidadesDelMago(mago).size() * ALTO_LINEA + 8.f;
+	return sf::FloatRect(X - 6.f, y, X_DERECHA - X + 12.f, ALTO_LINEA + 2.f);
+}
+
+HabilidadSeleccionada Hud::habilidadEn(sf::Vector2f punto, const Mago& mago) const {
+	std::vector<HabilidadSeleccionada> lista = habilidadesDelMago(mago);
+	for (size_t i = 0; i < lista.size(); i++) {
+		if (cajaHabilidad((int)i).contains(punto)) {
+			return lista[i];
+		}
+	}
+	return HabilidadSeleccionada::NINGUNA;
+}
+
+bool Hud::estaSobreTerminarTurno(sf::Vector2f punto, const Mago& mago) const {
+	return cajaTerminarTurno(mago).contains(punto);
+}
+
+void Hud::dibujarHabilidades(sf::RenderWindow& ventana, const Mago& mago, HabilidadSeleccionada habilidadPreparada,
+	bool turnoJugador, sf::Vector2f mouse) const {
 	// Encabezado: "Habilidades ... Mana" (la columna de la derecha es lo que cuesta cada una)
 	sf::Text titulo = crearTexto("Habilidades", 22, TENUE);
 	titulo.setPosition(X, Y_HABILIDADES);
 	ventana.draw(titulo);
 	dibujarTextoDerecha(ventana, crearTexto("Mana", 22, TENUE), X_DERECHA, Y_HABILIDADES);
 
-	// Una por linea: "[1] Bola de energia ... 2". La preparada va en Gema; las que no alcanza el mana, en Tenue
-	float y = Y_HABILIDADES + ALTO_LINEA + 4.f;
-	for (int i = 1; i <= mago.getCantidadHabilidades(); i++) {
-		HabilidadSeleccionada cual = HabilidadSeleccionada(i);
+	// Una por linea: "[1] Bola de energia ... 3". La preparada va en Gema; las que no alcanza el mana, en Tenue.
+	// Se pueden elegir con la tecla o con un click: la que esta debajo del mouse tiene un fondo Pizarra
+	std::vector<HabilidadSeleccionada> lista = habilidadesDelMago(mago);
+	for (size_t i = 0; i < lista.size(); i++) {
+		HabilidadSeleccionada cual = lista[i];
 		const Habilidad& habilidad = mago.getHabilidad(cual);
+		sf::FloatRect caja = cajaHabilidad((int)i);
+
+		if (turnoJugador && caja.contains(mouse)) {
+			sf::RectangleShape resaltado(sf::Vector2f(caja.width, caja.height));
+			resaltado.setPosition(caja.left, caja.top);
+			resaltado.setFillColor(PIZARRA);
+			ventana.draw(resaltado);
+		}
 
 		sf::Color color = PIEDRA;
 		if (cual == habilidadPreparada) {
@@ -204,16 +252,28 @@ void Hud::dibujarHabilidades(sf::RenderWindow& ventana, const Mago& mago, Habili
 			color = TENUE;
 		}
 
-		sf::Text nombre = crearTexto("[" + std::to_string(i) + "] " + habilidad.getNombre(), 22, color);
-		nombre.setPosition(X, y);
+		std::string tecla = std::to_string(static_cast<int>(cual));
+		sf::Text nombre = crearTexto("[" + tecla + "] " + habilidad.getNombre(), 22, color);
+		nombre.setPosition(X, caja.top);
 		ventana.draw(nombre);
-		dibujarTextoDerecha(ventana, crearTexto(std::to_string(habilidad.getCostoMana()), 22, color), X_DERECHA, y);
-		y += ALTO_LINEA;
+		dibujarTextoDerecha(ventana, crearTexto(std::to_string(habilidad.getCostoMana()), 22, color), X_DERECHA, caja.top);
 	}
 
-	// Al final, como pasar el turno (Tenue: es secundario)
-	sf::Text pasar = crearTexto("[Espacio] Terminar turno", 22, TENUE);
-	pasar.setPosition(X, y + 6.f);
+	// Abajo, el boton de pasar el turno: un rectangulo con borde (con el mouse encima, se rellena)
+	sf::FloatRect caja = cajaTerminarTurno(mago);
+	bool encima = turnoJugador && caja.contains(mouse);
+	sf::RectangleShape boton(sf::Vector2f(caja.width - 4.f, caja.height - 4.f));
+	boton.setPosition(caja.left + 2.f, caja.top + 2.f); // el borde de 2 px va por fuera
+	boton.setFillColor(encima ? PIZARRA : FONDO);
+	boton.setOutlineThickness(2.f);
+	boton.setOutlineColor(PIZARRA);
+	ventana.draw(boton);
+
+	sf::Text pasar = crearTexto("[Espacio] Terminar turno", 22, encima ? PIEDRA : TENUE);
+	sf::FloatRect cajaTexto = pasar.getLocalBounds();
+	// Centrado en el boton
+	pasar.setOrigin(std::floor(cajaTexto.left + cajaTexto.width / 2), std::floor(cajaTexto.top + cajaTexto.height / 2));
+	pasar.setPosition(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height / 2));
 	ventana.draw(pasar);
 }
 
@@ -281,18 +341,114 @@ void Hud::dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::s
 	}
 }
 
-void Hud::dibujarNivelSuperado(sf::RenderWindow& ventana, const std::string& aviso) const {
-	dibujarCartel(ventana, "NIVEL SUPERADO", GEMA, aviso, "Enter: seguir | S: guardar y salir");
+void Hud::dibujarAmenazas(sf::RenderWindow& ventana, const sf::View& vistaCamara,
+	const std::vector<Amenaza>& amenazas, const std::vector<sf::Vector2f>& atacantes) const {
+	ventana.setView(ventana.getDefaultView());
+
+	// El numero va en el centro de la casilla marcada. Igual que los numeros de danio: mundo -> pixel -> HUD
+	for (const Amenaza& amenaza : amenazas) {
+		sf::Vector2i pixel = ventana.mapCoordsToPixel(amenaza.posicionMundo, vistaCamara);
+		sf::Vector2f pantalla = ventana.mapPixelToCoords(pixel, ventana.getDefaultView());
+
+		sf::Text texto = crearTexto(std::to_string(amenaza.danio), 22, PELIGRO_CLARO);
+		sf::FloatRect caja = texto.getLocalBounds();
+		texto.setOrigin(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height / 2));
+		texto.setPosition(std::floor(pantalla.x), std::floor(pantalla.y));
+		ventana.draw(texto);
+	}
+
+	// Un "!" arriba de la cabeza de cada enemigo que va a atacar
+	for (const sf::Vector2f& posicion : atacantes) {
+		sf::Vector2i pixel = ventana.mapCoordsToPixel(posicion, vistaCamara);
+		sf::Vector2f pantalla = ventana.mapPixelToCoords(pixel, ventana.getDefaultView());
+
+		sf::Text texto = crearTexto("!", 22, PELIGRO_CLARO);
+		sf::FloatRect caja = texto.getLocalBounds();
+		texto.setOrigin(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height));
+		texto.setPosition(std::floor(pantalla.x), std::floor(pantalla.y));
+		ventana.draw(texto);
+	}
+}
+
+void Hud::dibujarTurnosFuego(sf::RenderWindow& ventana, const sf::View& vistaCamara,
+	const std::vector<TurnosFuego>& fuegos) const {
+	ventana.setView(ventana.getDefaultView());
+	for (const TurnosFuego& fuego : fuegos) {
+		// Mundo -> pixel de la ventana -> coordenada del HUD (igual que los numeros de danio)
+		sf::Vector2i pixel = ventana.mapCoordsToPixel(fuego.posicionMundo, vistaCamara);
+		sf::Vector2f pantalla = ventana.mapPixelToCoords(pixel, ventana.getDefaultView());
+
+		sf::Text texto = crearTexto(std::to_string(fuego.turnos), 22, FUEGO);
+		sf::FloatRect caja = texto.getLocalBounds();
+		texto.setOrigin(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height / 2));
+		texto.setPosition(std::floor(pantalla.x), std::floor(pantalla.y));
+		ventana.draw(texto);
+	}
+}
+
+void Hud::dibujarVolumen(sf::RenderWindow& ventana, int volumen, float opacidad) const {
+	ventana.setView(ventana.getDefaultView());
+	sf::Uint8 alfa = (sf::Uint8)(255 * opacidad);
+	sf::Text texto = crearTexto("Musica: " + std::to_string(volumen), 22, sf::Color(PIEDRA.r, PIEDRA.g, PIEDRA.b, alfa));
+	texto.setOutlineColor(sf::Color(FONDO.r, FONDO.g, FONDO.b, alfa));
+	texto.setPosition(16.f, 720.f - 16.f - 30.f); // abajo a la izquierda, a 16 px de los bordes
+	ventana.draw(texto);
+}
+
+void Hud::dibujarVelo(sf::RenderWindow& ventana) const {
+	sf::RectangleShape velo(sf::Vector2f(1280.f, 720.f));
+	velo.setFillColor(sf::Color(FONDO.r, FONDO.g, FONDO.b, 190));
+	ventana.draw(velo);
+}
+
+void Hud::dibujarHistoria(sf::RenderWindow& ventana, const std::string& titulo, const std::string& aviso,
+	const std::vector<std::string>& lineas, const std::string& instruccion) const {
+	ventana.setView(ventana.getDefaultView());
+	dibujarVelo(ventana);
+
+	// Panel del medio: 760x380, centrado (de (260, 170) a (1020, 550))
+	sf::RectangleShape panel(sf::Vector2f(760.f, 380.f));
+	panel.setPosition(260.f, 170.f);
+	panel.setFillColor(FONDO);
+	panel.setOutlineThickness(2.f);
+	panel.setOutlineColor(PIZARRA);
+	ventana.draw(panel);
+
+	// Titulo x2 y aviso, centrados en x = 640
+	sf::Text textoTitulo = crearTexto(titulo, 22, GEMA);
+	textoTitulo.setScale(2.f, 2.f);
+	sf::FloatRect caja = textoTitulo.getLocalBounds();
+	textoTitulo.setOrigin(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height / 2));
+	textoTitulo.setPosition(640.f, 215.f);
+	ventana.draw(textoTitulo);
+
+	if (!aviso.empty()) {
+		sf::Text textoAviso = crearTexto(aviso, 22, GEMA);
+		caja = textoAviso.getLocalBounds();
+		textoAviso.setOrigin(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height / 2));
+		textoAviso.setPosition(640.f, 262.f);
+		ventana.draw(textoAviso);
+	}
+
+	// La historia, alineada a la izquierda, una linea cada 30 px
+	for (size_t i = 0; i < lineas.size(); i++) {
+		sf::Text linea = crearTexto(lineas[i], 22, PIEDRA);
+		linea.setPosition(300.f, 290.f + i * ALTO_LINEA);
+		ventana.draw(linea);
+	}
+
+	sf::Text textoInstruccion = crearTexto(instruccion, 22, TENUE);
+	caja = textoInstruccion.getLocalBounds();
+	textoInstruccion.setOrigin(std::floor(caja.left + caja.width / 2), std::floor(caja.top + caja.height / 2));
+	textoInstruccion.setPosition(640.f, 515.f);
+	ventana.draw(textoInstruccion);
 }
 
 void Hud::dibujarCartel(sf::RenderWindow& ventana, const std::string& titulo, sf::Color colorTitulo,
 	const std::string& detalle, const std::string& instruccion) const {
 	ventana.setView(ventana.getDefaultView());
 
-	// Oscurece todo lo de atras (el tablero se sigue viendo, apagado)
-	sf::RectangleShape velo(sf::Vector2f(1280.f, 720.f));
-	velo.setFillColor(sf::Color(FONDO.r, FONDO.g, FONDO.b, 190));
-	ventana.draw(velo);
+	dibujarVelo(ventana);
 
 	// Panel del medio: 480x200, centrado
 	sf::RectangleShape panel(sf::Vector2f(480.f, 200.f));

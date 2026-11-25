@@ -19,14 +19,21 @@ class Mago : public Personaje {
         int getManaMaximo() const;
         int getMovimiento() const;
         bool gastarMana(int _cantidad);
+        // Para cargar una partida guardada (sin pasarse del maximo).
+        void setMana(int _mana);
         // Suma mana sin pasarse del maximo.
         void recuperarMana(int _cantidad);
-        // Hay que llamar antes a tieneHabilidad(): si no la aprendio, se sale del vector.
+        // Hay que llamar antes a tieneHabilidad(): si no la aprendio, devuelve la primera que tenga.
         const Habilidad& getHabilidad(HabilidadSeleccionada _habilidad) const;
         int getCantidadHabilidades() const;
-        // Si ya aprendio esa habilidad (el muro de fuego recien se aprende en el nivel 2).
+        // Si ya aprendio esa habilidad (cada una se aprende en un nivel, ver Habilidades.dat).
         bool tieneHabilidad(HabilidadSeleccionada _habilidad) const;
-        // Agrega una habilidad al final. Tiene que seguir el orden de HabilidadSeleccionada.
+        // Usa esa habilidad sobre esa casilla: gasta el mana y devuelve el ataque (casillas y danio).
+        // Si no le alcanza el mana, no gasta nada y devuelve un ataque sin casillas.
+        Ataque atacar(HabilidadSeleccionada _habilidad, int filaObjetivo, int columnaObjetivo);
+        // Agrega una habilidad. El orden no importa: se buscan por su tipo.
         void aprenderHabilidad(const Habilidad& _habilidad);
+        // Se olvida de todas (al empezar un nivel se le vuelven a ensenar las que corresponden).
+        void olvidarHabilidades();
 
 };
