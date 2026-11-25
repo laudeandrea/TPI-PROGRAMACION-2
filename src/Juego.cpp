@@ -46,6 +46,7 @@ void Juego::iniciar() {
 	texturaPeligro.loadFromFile("Imagenes/marcador_peligro.png");
 	texturaBola.loadFromFile("Imagenes/bola_energia.png");
 	texturaBolaEspectro.loadFromFile("Imagenes/bola_espectro.png");
+	texturaFlecha.loadFromFile("Imagenes/flecha.png");
 
 	// Camara: encuadra el tablero y lo estira para llenar la ventana
 	camara.ajustarAVentana(window.getSize());
@@ -1042,8 +1043,17 @@ void Juego::ejecutarAtaquesEnemigos() {
 				sf::Vector2f altura(0.f, ALTURA_PECHO);
 				sf::Vector2f origen = mapa.casillaAmundo(enemigo.getFila(), enemigo.getColumna()) - altura;
 				sf::Vector2f destino = mapa.casillaAmundo(casilla.y, casilla.x) - altura;
-				proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBolaEspectro,
-					ataque.danio, casilla.y, casilla.x));
+
+				// El arquero tira una flecha (36x14, un solo dibujo, girada hacia donde va);
+				// el espectro, la bola de ectoplasma de siempre (2 cuadros de 16x16)
+				if (enemigo.getTipo() == TipoEnemigo::ESQUELETO) {
+					proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaFlecha,
+						ataque.danio, casilla.y, casilla.x, 36, 14, 1, true));
+				}
+				else {
+					proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBolaEspectro,
+						ataque.danio, casilla.y, casilla.x));
+				}
 			}
 			else {
 				explosiones.push_back({ casilla.y, casilla.x, 0.f }); // la casilla se marca en rojo un momento

@@ -181,6 +181,7 @@ xcopy /Y /D /I /E "$(ProjectDir)Datos" "$(OutDir)Datos"</Command>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\EsqueletoArquero.cpp" />
     <ClCompile Include="src\Partida.cpp" />
     <ClCompile Include="src\PartidaArchivo.cpp" />
     <ClCompile Include="src\Pergamino.cpp" />
@@ -213,6 +214,7 @@ xcopy /Y /D /I /E "$(ProjectDir)Datos" "$(OutDir)Datos"</Command>
     <ClCompile Include="src\Sonidos.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\EsqueletoArquero.h" />
     <ClInclude Include="src\Partida.h" />
     <ClInclude Include="src\PartidaArchivo.h" />
     <ClInclude Include="src\Pergamino.h" />

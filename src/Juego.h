@@ -89,7 +89,7 @@ class Juego {
 		bool magoSeMovio;       // ya camino este turno: puede tirar una habilidad o pasar, pero no volver a moverse
 
 		// Marcadores de casillas (movimiento, alcance de la habilidad, ataques anunciados) y las bolas que vuelan
-		sf::Texture texturaMovimiento, texturaAlcance, texturaObjetivo, texturaPeligro, texturaBola, texturaBolaEspectro;
+		sf::Texture texturaMovimiento, texturaAlcance, texturaObjetivo, texturaPeligro, texturaBola, texturaBolaEspectro, texturaFlecha;
 		std::vector<std::unique_ptr<Proyectil>> proyectiles; // vacio cuando no hay ninguna bola volando
 		std::vector<Explosion> explosiones;
 		std::vector<Muro> muros; // las casillas de fuego que hay ahora en el tablero

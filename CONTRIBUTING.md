@@ -195,6 +195,8 @@ igual que el menú. Tiene 6 páginas. `Imagenes/vista_previa_ayuda.png` muestra 
 - **Sin tildes,** como el resto de los textos del juego.
 - **Los dibujos** son un tablerito de 3×3 armado con las mismas baldosas y personajes del juego, agrandado
   x2 sin suavizar. Si cambia una baldosa o un personaje, hay que volver a armarlos.
+- **Página 6 (ENEMIGOS):** el texto ya describe a los cuatro enemigos, pero `ayuda_6.png` todavía muestra los
+  tres de antes (caballero, espectro y golem): hay que volver a armarlo con el esqueleto arquero.
 - **Los números de las reglas** (vida, daño, maná, alcance, en qué piso se aprende cada habilidad) se arman con
   `std::to_string` a partir del `Catalogo`: si se cambia un `.dat`, la ayuda se actualiza sola. Lo único escrito
   a mano es el movimiento y el maná del mago (página 2). Los números son los de la dificultad **Normal** (la
@@ -305,12 +307,13 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
 | `marcador_objetivo.png` | 64×40 | Igual que el de alcance, en rojo (**Peligro**): hay un enemigo al alcance. También marca, desvaneciéndose en 0,5 s, las casillas que recibieron un golpe, la explosión del golem o la quemadura del fuego, y con el muro preparado, las 3 casillas donde quedaría. | `(32, 20)` |
 | `bola_energia.png` | 32×16 | Bola de energía: **2 cuadros de 16×16** uno al lado del otro, se alternan cada 0,1 s. | Centro del cuadro, `(8, 8)` |
 | `bola_espectro.png` | 32×16 | Bola de ectoplasma del espectro: mismo formato que la bola de energía, en los colores del **Vacío**, con dos ojitos oscuros y jirones rojizos para que no se confunda con la del mago. | `(8, 8)` |
+| `flecha.png` | 36×14 | Flecha del esqueleto arquero. Apunta a la **derecha** y es un solo dibujo: el código la gira con `setRotation` según hacia dónde vuela (`atan2` de la dirección). | Centro del dibujo, `(18, 7)` |
 
 - **Marcadores:** son 1 px más chicos que el rombo de la baldosa, para que la junta oscura se siga viendo,
   y el relleno es tramado y casi transparente, para que se vea el piso. Se dibujan después del mapa y antes
   que los personajes. En el abismo solo se marca si hay un enemigo (el espectro vuela).
-- **La bola** sale del pecho del mago y pega en el pecho del enemigo: **30 px arriba de los pies**
-  (`ALTURA_PECHO` en `Juego.h`).
+- **Los proyectiles** (la bola y la flecha) salen del pecho y pegan en el pecho: **30 px arriba de los pies**
+  (`ALTURA_PECHO` en `Juego.h`). La flecha, además, se dibuja girada: la imagen apunta a la derecha.
 - **Barra de vida arriba de la cabeza** (enemigos y mago): 32×4 px (del mundo), 6 px arriba de la imagen
   del personaje. Vacía en **Pizarra**, llena en **Peligro**, con un borde de 1 px color **Fondo**.
 - **Panel del HUD a la derecha** (fijo en la pantalla): de x = 960 a 1280, todo el alto. Es la parte de la
@@ -318,7 +321,7 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
   `X_PANEL` en `Hud.cpp`). Relleno **Fondo** casi opaco (alfa 235) y un borde de 2 px **Pizarra** a la izquierda.
   El contenido va de x = 984 a x = 1256 (24 px de margen). Lo que va a la derecha se alinea a x = 1256.
   Las partes se separan con líneas de 2 px **Pizarra**. De arriba hacia abajo:
-  - **Nivel y oleada** (y = 24): "Nivel 1/2" en **Gema** a la izquierda y "Oleada 1/2" en **Piedra** a la derecha.
+  - **Nivel y oleada** (y = 24): "Nivel 1/3" en **Gema** a la izquierda y "Oleada 1/2" en **Piedra** a la derecha.
   - **Vida** (y = 84) y **Codice** (y = 144): título en **Piedra** a la izquierda y "80/130" en rojo claro a la
     derecha; 32 px más abajo, la barra de 267×12 (vacía en **Pizarra**, llena en **Peligro**, borde **Fondo** de 2 px).
   - **Mana** (y = 204): igual, con "8/10" en **Gema**, y abajo un rectángulo de 24×12 por cada punto (separados
@@ -366,7 +369,8 @@ Vistas previas (1280×720, escala ×2, sin el panel del HUD): [nivel 1](Imagenes
 - **Todo el texto del HUD es tamaño 22** y lleva un borde oscuro de 2 px, para leerse sobre cualquier cosa.
 - **Cómo se generan:** igual que el arte del mapa, con scripts de Python que no están en el repositorio
   (`generar_arte_habilidad.py` para los marcadores y la bola de energía, `generar_arte_enemigos.py` para la
-  bola del espectro, `generar_arte_ayuda.py` para los dibujos de "Como jugar").
+  bola del espectro, `generar_arte_ayuda.py` para los dibujos de "Como jugar"). El esqueleto arquero y la flecha
+  del piso 3 no salieron de esos scripts: se generaron con IA (ver `Imagenes/CREDITOS.txt`).
 
 ## Git
 

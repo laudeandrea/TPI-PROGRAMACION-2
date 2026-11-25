@@ -42,9 +42,9 @@ muestra caracteres raros: eso es normal. No se suben al repositorio.
 
 ## Cómo se juega
 
-Hay que defender el **códice** (el libro sobre el atril) en los **2 pisos** de la torre, de **2 oleadas** cada uno.
-Se pierde si el mago se queda sin vida o si destruyen el códice; se gana al terminar con la última oleada del piso 2.
-El códice tiene 80 de vida en el piso 1 y 100 en el piso 2 (en Normal).
+Hay que defender el **códice** (el libro sobre el atril) en los **3 pisos** de la torre, de **2 oleadas** cada uno.
+Se pierde si el mago se queda sin vida o si destruyen el códice; se gana al terminar con la última oleada del piso 3.
+El códice tiene 80 de vida en el piso 1, 100 en el piso 2 y 120 en el piso 3 (en Normal).
 
 **Dificultad.** Al elegir "Nueva partida" se elige **Fácil**, **Normal** o **Difícil** ([vista previa](Imagenes/vista_previa_dificultad.png)).
 Queda guardada con la partida y se ve abajo a la derecha del panel. Cada una cambia estos valores (están en
@@ -63,6 +63,7 @@ Antes de cada piso aparece un cartel con la historia (Enter para empezar).
 |---|---|---|
 | 1 | El códice a la izquierda, los enemigos salen de la derecha. | 1) caballero y espectro. 2) caballero, espectro y golem. |
 | 2 | Dos pozos parten el tablero. El códice está arriba y los enemigos salen de abajo: para llegar pasan por el medio o por los bordes ([vista previa](Imagenes/vista_previa_nivel2.png)). Se aprende el **muro de fuego**. | 1) dos caballeros y un espectro. 2) dos golems, un caballero y un espectro. |
+| 3 | La cripta: dos abismos a los costados y dos columnas en el medio obligan a zigzaguear por el pasillo central. Aparece el **esqueleto arquero**. | 1) dos caballeros y un arquero. 2) dos arqueros, un golem y un espectro. |
 
 Todo esto (tableros, oleadas, vida y daño de cada enemigo, valores de cada habilidad y la historia) está en los
 archivos de `Datos/`, no en el código: ver "Los archivos de datos".
@@ -103,6 +104,7 @@ termina el turno (moverse no). Después juegan los enemigos y el mago recupera m
 | Caballero | 20 | Cuerpo a cuerpo: 12 de daño. |
 | Espectro | 20 | De lejos (hasta 3 casillas) con una bola de ectoplasma: 6 de daño. Atraviesa columnas, abismos y el muro de fuego (quemándose). |
 | Golem | 40 | Explota: 30 de daño a las 8 casillas de alrededor (también a otros enemigos). Explota cuando llega a su objetivo **y también cuando lo matan**; si cae al abismo, no explota. Si su explosión mata a otro golem, ese también explota. |
+| Esqueleto arquero | 20 | De lejos (hasta 4 casillas) con una flecha: 9 de daño. La flecha pasa por arriba de columnas y pozos (no hace falta línea de visión). |
 
 Cada enemigo va por lo que tenga más cerca: el mago o el códice.
 
@@ -116,7 +118,7 @@ juego_pr2.slnx         Solución (abrir esta)
 juego_pr2.vcxproj      Proyecto: rutas, SFML y copia automática de DLL, imágenes, sonidos y datos
 juego_pr2.rc           Ícono del .exe (usa Imagenes/icono.ico)
 src/                   Código del juego (.cpp y .h)
-Imagenes/              Texturas e íconos
+Imagenes/              Texturas e íconos, y sus créditos (CREDITOS.txt)
 Fuentes/               Fuente del juego (Pixelify Sans) y su licencia (OFL.txt)
 Sonidos/               Efectos y música (WAV/OGG) y sus créditos
 Datos/                 El contenido del juego: niveles, oleadas, enemigos y habilidades (.dat binarios)
@@ -147,26 +149,27 @@ build/                 Generado al compilar (ignorado por git)
 | `Personaje` | `Personaje.h` / `Personaje.cpp` | Clase base de todo lo que se para en el tablero: en qué casilla está, su vida, su imagen y cómo dibujarse. |
 | `Mago` | `Mago.h` / `Mago.cpp` | Hereda de `Personaje`. Agrega el maná (`gastarMana` no lo deja quedar negativo) y sus habilidades en un `std::vector<Habilidad>`. Al empezar cada nivel el `Juego` le enseña las que le corresponden (`aprenderHabilidad()`); `tieneHabilidad()` y `getHabilidad()` las buscan por su tipo. `atacar()` usa una habilidad sobre una casilla: gasta el maná y devuelve el `Ataque` (si no alcanza el maná, no gasta nada y devuelve uno vacío). |
 | `Habilidad` | `Habilidad.h` / `Habilidad.cpp` | Una habilidad del mago: tipo (`TipoHabilidad`), nombre, daño, costo de maná, alcance (en casillas) y duración (solo el muro). `usar()` arma el `Ataque` sobre una casilla. |
-| `Enemigo` | `Enemigo.h` / `Enemigo.cpp` | Hereda de `Personaje` y es **abstracta**: `getTipo()`, `mover()` y `atacar()` son `= 0`, así que cada hija los tiene que definir (polimorfismo). `mover()` da su paso hacia el objetivo y `atacar()` ejecuta el ataque que había anunciado. Para caminar, las hijas usan `darPaso()`, que busca el camino más corto con `pasoHacia()` rodeando lo que no pueden pisar y a los otros personajes. Tiene el daño (el *ataque* del diagrama), el alcance (`getAlcanceAtaque()`) y el **ataque anunciado** (`anunciarAtaque()`, `cancelarAtaque()`, `tieneAtaqueAnunciado()`). `planearAtaque()` dice qué casillas golpearía, `ataqueAlMorir()` qué hace al morir y `atacaADistancia()` si su ataque viaja como una bola. |
+| `Enemigo` | `Enemigo.h` / `Enemigo.cpp` | Hereda de `Personaje` y es **abstracta**: `getTipo()`, `mover()` y `atacar()` son `= 0`, así que cada hija los tiene que definir (polimorfismo). `mover()` da su paso hacia el objetivo y `atacar()` ejecuta el ataque que había anunciado. Para caminar, las hijas usan `darPaso()`, que busca el camino más corto con `pasoHacia()` rodeando lo que no pueden pisar y a los otros personajes. Tiene el daño (el *ataque* del diagrama), el alcance (`getAlcanceAtaque()`) y el **ataque anunciado** (`anunciarAtaque()`, `cancelarAtaque()`, `tieneAtaqueAnunciado()`). `planearAtaque()` dice qué casillas golpearía, `ataqueAlMorir()` qué hace al morir y `atacaADistancia()` si su ataque viaja como un proyectil. |
 | `Caballero` | `Caballero.h` / `Caballero.cpp` | Hereda de `Enemigo` (es el *Guerrero* del diagrama). `mover()`: camina rodeando pozos, columnas y fuego. `atacar()`: un golpe cuerpo a cuerpo a la casilla que marcó. |
 | `Espectro` | `Espectro.h` / `Espectro.cpp` | Hereda de `Enemigo`. Redefine `puedePisar` (vuela sobre abismos, columnas y el muro de fuego), `getAlcanceAtaque` (3), `atacaADistancia`, `mover()` (vuela) y `atacar()`, que llama a `lanzarProyectil()`: su ataque es una bola. |
 | `Golem` | `Golem.h` / `Golem.cpp` | Hereda de `Enemigo`. Redefine `planearAtaque` (las 8 casillas de alrededor), `mover()` (camina), `atacar()`, que llama a `explotar()` (le pega a las 8 casillas y se queda sin vida), y `ataqueAlMorir` (la misma explosión). |
-| `Ataque` | `Ataque.h` | `struct` con lo que hace un ataque: a qué casillas les pega y cuánto. Lo usan el mago (`atacar()`), las habilidades (`usar()`), los enemigos (`atacar()`) y las bolas (`colisionar()`). El que ataca no sabe quién está ahí: el `Juego` lastima al que esté (`daniarCasilla()`). |
-| `Pergamino` | `Pergamino.h` / `Pergamino.cpp` | El códice que hay que defender (el *Cristal* del diagrama): su casilla, su vida (la máxima la dice cada nivel: 80 y 100) y su dibujo (cambia a dañado con menos de la mitad). No es un `Personaje`. |
+| `EsqueletoArquero` | `EsqueletoArquero.h` / `EsqueletoArquero.cpp` | Hereda de `Enemigo`. Camina como el caballero (`darPaso()`) pero ataca de lejos: `getAlcanceAtaque()` (4) y `atacaADistancia()` hacen que su ataque viaje como una flecha. No tiene habilidad propia: se diferencia por el alcance. |
+| `Ataque` | `Ataque.h` | `struct` con lo que hace un ataque: a qué casillas les pega y cuánto. Lo usan el mago (`atacar()`), las habilidades (`usar()`), los enemigos (`atacar()`) y los proyectiles (`colisionar()`). El que ataca no sabe quién está ahí: el `Juego` lastima al que esté (`daniarCasilla()`). |
+| `Pergamino` | `Pergamino.h` / `Pergamino.cpp` | El códice que hay que defender (el *Cristal* del diagrama): su casilla, su vida (la máxima la dice cada nivel: 80, 100 y 120) y su dibujo (cambia a dañado con menos de la mitad). No es un `Personaje`. |
 | `Nivel` | `Nivel.h` / `Nivel.cpp` | El nivel que se está jugando. Como en el diagrama de clases, **tiene** su `Mapa`, sus enemigos (`std::vector<std::unique_ptr<Enemigo>>`) y el códice (`Pergamino`); el `Juego` los usa con `getMapa()`, `getEnemigos()` y `getCodice()`. `iniciar()` arma el tablero y el códice (con la vida de la dificultad); `getOleada()`, `hayOtraOleada()`, `siguienteOleada()` y `crearOleada()` manejan las oleadas, y `completar()` lo marca como ganado. Los datos se los pide al `Catalogo`, que guarda como puntero. |
 | `Partida` | `Partida.h` / `Partida.cpp` | El registro de `partida.dat`: el nivel, la dificultad, si quedó por la mitad (`enCurso`), la oleada, la vida del códice y los muros de fuego que había. |
 | `MagoGuardado` | `MagoGuardado.h` / `.cpp` | El registro de `Mago.dat`: vida, maná, casilla y si ya había caminado en ese turno. |
 | `EnemigoGuardado` | `EnemigoGuardado.h` / `.cpp` | Un registro de `Enemigos.dat`: tipo, casilla, vida y el ataque que tenía anunciado. Se arma directo desde un `Enemigo`. |
 | `PartidaArchivo` | `PartidaArchivo.h` / `PartidaArchivo.cpp` | Maneja los tres archivos de la partida guardada con un `Archivo<T>` para cada uno. `guardar()` guarda un nivel sin empezar, `guardarEnCurso()` uno por la mitad, `leer()` / `leerMago()` / `leerEnemigos()` los leen y `borrar()` los elimina. |
-| `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Una bola que vuela (animada) hasta una casilla y guarda el daño que va a hacer. `mover()` la hace avanzar en su `direccion` y, al llegar, `colisionar()` devuelve el `Ataque` (su casilla y su daño). La usan la bola de energía del mago y el espectro. |
+| `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Lo que vuela hasta una casilla y guarda el daño que va a hacer. `mover()` lo hace avanzar en su `direccion` y, al llegar, `colisionar()` devuelve el `Ataque` (su casilla y su daño). La imagen es configurable: tamaño de cada cuadro, cantidad de cuadros (animación) y si gira para apuntar hacia donde va. Así sirve para la bola de energía del mago y la del espectro (2 cuadros de 16×16) y para la flecha del arquero (36×14, un solo dibujo, girada). |
 | `Hud` | `Hud.h` / `Hud.cpp` | Lo que se dibuja fijo en la pantalla: el panel de la derecha (nivel, oleada, vida del mago y del códice, maná, habilidades, el botón "Terminar turno" y qué hacer ahora), los números de daño que suben, los números de los ataques anunciados y los carteles (historia, victoria, derrota). También dice qué habilidad o botón hay debajo del mouse (`habilidadEn()`, `estaSobreTerminarTurno()`). |
 | `Muro` | `Juego.h` | `struct` con una casilla del muro de fuego y cuántos turnos le quedan. Mientras dura, esa casilla del mapa es `TipoTerreno::MURO`. |
 | `TipoTerreno` | `Casilla.h` | `enum` con los terrenos posibles: `SUELO`, `SUELO_OCUPADO` (donde está el códice: nadie lo pisa), `COLUMNAROTA` (la *ROCA* del diagrama), `ABISMO` y `MURO` (fuego: solo lo cruza el espectro). |
-| `TipoEnemigo` | `Enemigo.h` | `enum` con los tipos de enemigo: `CABALLERO` (0), `ESPECTRO` (1), `GOLEM` (2). El número es el que se guarda en los `.dat`. |
+| `TipoEnemigo` | `Enemigo.h` | `enum` con los tipos de enemigo: `CABALLERO` (0), `ESPECTRO` (1), `GOLEM` (2) y `ESQUELETO` (3, el arquero). El número es el que se guarda en los `.dat`. |
 | `HabilidadSeleccionada` | `Habilidad.h` | `enum` con la habilidad que tiene preparada el jugador: `NINGUNA`, `BOLA_DE_ENERGIA` (= 1), `EMPUJE` (= 2) y `MURO` (= 3). El número coincide con la tecla, y siempre es el `TipoHabilidad` + 1. |
 | `TipoHabilidad` | `Habilidad.h` | `enum` con lo que hace cada habilidad: `BOLADEENERGIA` (0), `EMPUJE` (1) y `MURO` (2). |
 | `EstadoJuego` | `Juego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `ELEGIR_DIFICULTAD`, `COMO_JUGAR`, `HISTORIA`, `JUGANDO`, `NIVEL_SUPERADO`, `GANASTE`, `PERDISTE`. |
-| `FaseTurno` | `Juego.h` | `enum` con de quién es el turno: `JUGADOR`, `DISPARANDO` (la bola del mago está volando), `ENEMIGOS_ATACAN` (ejecutan lo que anunciaron) y `ENEMIGOS_ESPERAN` (vuelan sus bolas; después caminan y anuncian). |
+| `FaseTurno` | `Juego.h` | `enum` con de quién es el turno: `JUGADOR`, `DISPARANDO` (la bola del mago está volando), `ENEMIGOS_ATACAN` (ejecutan lo que anunciaron) y `ENEMIGOS_ESPERAN` (vuelan sus bolas y flechas; después caminan y anuncian). |
 
 `main.cpp` solo crea un `Juego` y llama a `iniciar()`.
 
@@ -225,8 +228,8 @@ el juego.
 | Archivo | Registro | Qué tiene |
 |---|---|---|
 | `Habilidades.dat` | `DatosHabilidad` | Las 3 habilidades: nombre, daño, costo, alcance, duración y nivel en el que se aprenden. |
-| `TiposEnemigo.dat` | `DatosEnemigo` | Los 3 enemigos: nombre, vida, daño y alcance. |
-| `Niveles.dat` | `DatosNivel` | Los 2 niveles: tablero, posición del códice y del mago, cantidad de oleadas, vida del códice e historia. |
+| `TiposEnemigo.dat` | `DatosEnemigo` | Los 4 enemigos: nombre, vida, daño y alcance. |
+| `Niveles.dat` | `DatosNivel` | Los 3 niveles: tablero, posición del códice y del mago, cantidad de oleadas, vida del códice e historia. |
 | `NivelEnemigos.dat` | `DatosAparicion` | Cada enemigo de cada oleada: nivel, oleada, tipo y casilla de salida. |
 | `Dificultades.dat` | `DatosDificultad` | Fácil, Normal y Difícil: cuánto cambian la vida del códice, la vida y el daño de los enemigos, y el maná por turno. |
 
@@ -239,7 +242,8 @@ Lo único que sigue en el código es la vida, el maná y el movimiento del mago 
 
 **De dónde salen los valores.** Se simularon mil partidas por nivel, en cada dificultad, con tres jugadores
 automáticos: el *experto* (mira dos turnos adelante y no se equivoca), el *medio* (juega bien pero se equivoca
-seguido) y el *novato* (casi al azar). Cuántas veces gana cada uno el piso 1 / el piso 2:
+seguido) y el *novato* (casi al azar). Cuántas veces gana cada uno el piso 1 / el piso 2 (el piso 3 se agregó
+después y no está en la simulación):
 
 | Dificultad | Novato | Medio | Experto |
 |---|---|---|---|
@@ -261,7 +265,7 @@ carga WAV, OGG y FLAC; **no** carga MP3.
 | `musica_medieval.wav` | De fondo, en loop, desde que abre el juego (volumen 30). |
 | `inicio.ogg` | Al elegir "Nueva partida" o "Continuar". |
 | `bola_energia.ogg` | Al lanzar la bola de energía. |
-| `impacto.ogg` | Cuando llega cualquier proyectil (la bola del mago o la del espectro). |
+| `impacto.ogg` | Cuando llega cualquier proyectil (la bola del mago, la del espectro o la flecha). |
 | `ataque_enemigo.wav` | Cuando el caballero ejecuta su ataque cuerpo a cuerpo. |
 | `explosion_golem.wav` | Cuando un golem explota, al llegar o al morir. |
 | `quemadura.wav` | Cuando un enemigo se quema en el muro de fuego. |
@@ -272,17 +276,20 @@ carga WAV, OGG y FLAC; **no** carga MP3.
 Victoria y derrota paran la música para que se escuche el jingle; al volver al menú, la música arranca de
 nuevo. El origen y las licencias de cada archivo están en `Sonidos/CREDITOS.txt`.
 
+Los tres sonidos del arquero (`arco_disparo.wav`, `flecha_vuelo.wav` y `flecha_impacto.wav`) ya están en
+`Sonidos/` y acreditados, pero **todavía no están conectados** en `Sonidos.cpp`: el arquero dispara en silencio.
+
 ### Qué pasa al ejecutar
 
 1. **`Juego()`** (constructor): crea la ventana de 1280×720. C++ crea los atributos en el orden del `.h`:
    primero el `Catalogo` (que lee `Datos/`), después el `Mago`, el `Nivel` (que carga las imágenes de su mapa),
    la `Camara`, los menús y la `Ayuda`. Arranca con `estado = EstadoJuego::MENU`.
-2. **`iniciar()`** (lo llama `main`): le pone el ícono a la ventana, carga las imágenes de los marcadores y las
-   bolas, arma el nivel 1 con `empezarNivel(1)`, arranca la música y corre el game loop.
+2. **`iniciar()`** (lo llama `main`): le pone el ícono a la ventana, carga las imágenes de los marcadores, las
+   bolas y la flecha, arma el nivel 1 con `empezarNivel(1)`, arranca la música y corre el game loop.
    - **`empezarNivel(numero)`** arma un nivel de cero: crea el `Nivel` y llama a `nivelActual.iniciar()`, que
      carga su tablero y pone el códice (con la vida del nivel ajustada por la dificultad). Después crea el mago
      donde dice el nivel (con vida y maná llenos), le enseña las habilidades de ese nivel y de los anteriores
-     (`catalogo.getHabilidadesHastaNivel()`), borra las bolas y los muros que hubieran quedado y pone la primera
+     (`catalogo.getHabilidadesHastaNivel()`), borra los proyectiles y los muros que hubieran quedado y pone la primera
      oleada (`empezarOleada()`, que agrega los enemigos al nivel).
 3. **El game loop** repite en cada frame (60 por segundo):
    - **`procesarEventos()`**: cierra la ventana si la cierran (guardando antes, si se está jugando) y reajusta
@@ -332,10 +339,11 @@ nuevo. El origen y las licencias de cada archivo están en `Sonidos/CREDITOS.txt
        (respiro, para que la vea aparecer); si era la última, se pasa a `NIVEL_SUPERADO` o a `GANASTE`.
      - **Turno de los enemigos, primera parte** (`ejecutarAtaquesEnemigos()`): cada uno, en orden, se quema si
        está parado en el fuego y, si tenía un ataque anunciado, llama a `enemigo.atacar()` (`virtual`: el
-       caballero golpea, el espectro `lanzarProyectil()` y el golem `explotar()`, que lo destruye). El ataque
-       cae en las casillas marcadas, esté quien esté: el espectro tira una bola por casilla; los demás pegan en el
-       momento (y las casillas se marcan en rojo un instante, `explosiones`). Pasa a `ENEMIGOS_ESPERAN`.
-     - **Segunda parte** (`moverEnemigos()`): cuando llegaron las bolas y pasó `PAUSA_ENEMIGOS` (para que se
+       caballero golpea, el espectro y el arquero tiran un proyectil (bola de ectoplasma o flecha) y el golem
+       `explotar()`, que lo destruye). El ataque cae en las casillas marcadas, esté quien esté: los que atacan de
+       lejos tiran un proyectil por casilla; los demás pegan en el momento (y las casillas se marcan en rojo un
+       instante, `explosiones`). Al terminar, pasa a `ENEMIGOS_ESPERAN`.
+     - **Segunda parte** (`moverEnemigos()`): cuando llegaron los proyectiles y pasó `PAUSA_ENEMIGOS` (para que se
        vean los golpes), cada enemigo elige lo que tenga más cerca (`objetivoDe()`: el mago o el códice). Si no
        le llega el ataque, llama a `enemigo.mover()` (`virtual`) con las casillas ocupadas
        (`casillasOcupadas()`): da un paso por el camino más corto hasta una casilla desde la que pueda atacar
@@ -360,7 +368,7 @@ nuevo. El origen y las licencias de cada archivo están en `Sonidos/CREDITOS.txt
      2. con la cámara: el mapa, los marcadores (movimiento y alcance de la habilidad), los ataques anunciados
         (`marcador_peligro.png`, arriba de los otros marcadores para que siempre se vean), las casillas rojas de
         los golpes, los personajes y el códice ordenados por profundidad (`fila + columna`, de atrás hacia
-        adelante), las barras de vida y las bolas;
+        adelante), las barras de vida y los proyectiles;
      3. con la vista por defecto: los números de los ataques anunciados y los "!" (`hud.dibujarAmenazas()`), los
         turnos que le quedan a cada casilla de fuego (`hud.dibujarTurnosFuego()`) y el HUD (`hud.dibujar()`): los
         números de daño y el panel de la derecha;

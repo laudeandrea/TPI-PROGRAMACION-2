@@ -3,9 +3,11 @@
 
 // La textura es una referencia, y las referencias SOLO se pueden inicializar en la lista de inicializacion
 Proyectil::Proyectil(sf::Vector2f _origen, sf::Vector2f _destino, const sf::Texture& _textura,
-	int _danio, int _filaObjetivo, int _columnaObjetivo)
+	int _danio, int _filaObjetivo, int _columnaObjetivo,
+	int _anchoCuadro, int _altoCuadro, int _cantCuadros, bool _rota)
 	: posicion(_origen), destino(_destino), textura(_textura), tiempoVivo(0.f), llego(false),
-	  danio(_danio), filaObjetivo(_filaObjetivo), columnaObjetivo(_columnaObjetivo)
+	anchoCuadro(_anchoCuadro), altoCuadro(_altoCuadro), cantCuadros(_cantCuadros), rota(_rota),
+	danio(_danio), filaObjetivo(_filaObjetivo), columnaObjetivo(_columnaObjetivo)
 {
 	// La direccion es el camino completo dividido por su largo: queda un "paso" de largo 1 hacia el destino
 	sf::Vector2f camino = destino - posicion;
@@ -40,12 +42,22 @@ void Proyectil::mover(float dt) {
 void Proyectil::mostrar(sf::RenderWindow& ventana) const {
 	sf::Sprite sprite(textura);
 
-	// La imagen tiene 2 cuadros uno al lado del otro: se muestra uno u otro segun el tiempo
-	int cuadro = (int)(tiempoVivo / TIEMPO_POR_CUADRO) % 2;
-	sprite.setTextureRect(sf::IntRect(cuadro * TAMANIO_CUADRO, 0, TAMANIO_CUADRO, TAMANIO_CUADRO));
+	// Si la imagen tiene varios cuadros, se muestra uno u otro segun el tiempo
+	int cuadro = 0;
+	if (cantCuadros > 1) {
+		cuadro = (int)(tiempoVivo / TIEMPO_POR_CUADRO) % cantCuadros;
+	}
+	sprite.setTextureRect(sf::IntRect(cuadro * anchoCuadro, 0, anchoCuadro, altoCuadro));
 
-	sprite.setOrigin(TAMANIO_CUADRO / 2.f, TAMANIO_CUADRO / 2.f); // el centro de la bola
+	sprite.setOrigin(anchoCuadro / 2.f, altoCuadro / 2.f); // el centro del dibujo
 	sprite.setPosition(posicion);
+
+	// La flecha se gira para apuntar hacia donde va (la imagen apunta a la derecha)
+	if (rota) {
+		float grados = std::atan2(direccion.y, direccion.x) * 180.f / 3.14159265f;
+		sprite.setRotation(grados);
+	}
+
 	ventana.draw(sprite);
 }
 

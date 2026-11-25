@@ -7,7 +7,8 @@
 enum class TipoEnemigo {
 	CABALLERO,
 	ESPECTRO,
-	GOLEM
+	GOLEM,
+	ESQUELETO
 };
 
 /* Clase base de los enemigos: lo que comparten todos (vida, danio, dibujarse, el ataque anunciado).

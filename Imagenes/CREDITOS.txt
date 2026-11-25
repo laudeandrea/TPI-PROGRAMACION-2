@@ -1,0 +1,22 @@
+Imagenes del juego
+==================
+
+Generados con IA
+----------------
+Estos dibujos se generaron para el proyecto con herramientas de IA generativa, a partir de las indicaciones
+del equipo. No vienen de ningun juego comercial ni de un banco de imagenes: se usan solo en este juego.
+
+  esqueleto_64.png     <- el esqueleto arquero del piso 3 (64x64)
+  flecha.png           <- la flecha que tira el arquero (36x14, apunta a la derecha)
+
+Generados por codigo
+--------------------
+El resto del arte (baldosas del tablero, paredes, pozos, columnas, marcadores, bolas, muro de fuego,
+iconos y los dibujos de "Como jugar") se genera con los scripts de Python que se describen en
+CONTRIBUTING.md. Esos scripts no estan en el repositorio: se guardan en la carpeta herramientas/ de la
+PC del equipo (ignorada por git).
+
+Fuente
+------
+Fuentes/PixelifySans-Regular.ttf es la fuente Pixelify Sans, con licencia SIL Open Font License 1.1
+(ver Fuentes/OFL.txt). No es una imagen, pero se acredita aca junto con el resto del arte.

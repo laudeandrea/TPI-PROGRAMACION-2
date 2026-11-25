@@ -38,6 +38,15 @@ Sintetizados por codigo (ruido y ondas), sin material de terceros: se pueden usa
   explosion_golem.wav  <- el golem explota (al llegar o al morir)
   quemadura.wav        <- un enemigo se quema en el muro de fuego
 
+Generados con IA
+----------------
+Se generaron para el proyecto con herramientas de IA generativa, a partir de las indicaciones del equipo.
+No vienen de ningun juego comercial ni de una libreria de sonidos: se usan solo en este juego.
+
+  arco_disparo.wav     <- el arquero tensa el arco y dispara
+  flecha_vuelo.wav     <- la flecha del arquero mientras vuela
+  flecha_impacto.wav   <- la flecha al llegar a la casilla a la que apuntaba
+
 Otros
 -----
   bola_energia.ogg

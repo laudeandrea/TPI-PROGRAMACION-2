@@ -3,6 +3,7 @@
 #include "Caballero.h"
 #include "Espectro.h"
 #include "Golem.h"
+#include "EsqueletoArquero.h"
 
 // Donde estan los archivos (relativo a la carpeta desde donde se ejecuta el juego, igual que Imagenes/)
 static const std::string CARPETA_DATOS = "Datos";
@@ -51,7 +52,8 @@ std::vector<DatosEnemigo> Catalogo::enemigosPorDefecto() const {
 		// Espectro: 6 de danio (era 8). En la simulacion era el que mas le pegaba al codice en el nivel 2
 		DatosEnemigo(TipoEnemigo::ESPECTRO, "Espectro", 20, 6, 3),
 		// Golem: 40 de vida (era 60), 4 bolas. Con 60 casi nunca se lo mataba y su explosion al morir no se veia
-		DatosEnemigo(TipoEnemigo::GOLEM, "Golem", 40, 30, 1)          // pega fuerte, pero una sola vez
+		DatosEnemigo(TipoEnemigo::GOLEM, "Golem", 40, 30, 1),          // pega fuerte, pero una sola vez
+		DatosEnemigo(TipoEnemigo::ESQUELETO, "Esqueleto arquero", 20, 9, 4)
 	};
 }
 
@@ -94,7 +96,26 @@ std::vector<DatosNivel> Catalogo::nivelesPorDefecto() const {
 				"fuego. Dos pozos parten la sala en dos y",
 				"las criaturas suben desde abajo.",
 				"Hay que cerrarles el paso."
-			})
+			}),
+			// Nivel 3: la prueba final. Dos abismos a los costados dejan un pasillo central y las columnas de
+			// (3,3) y (4,2) obligan a zigzaguear. Los arqueros se quedan a 4 casillas del codice y tiran desde ahi.
+			// El codice tiene 120 de vida (80 -> 100 -> 120)
+			DatosNivel(3,{
+					"SSSSSSSS",
+					"XXSSSSXX",
+					"XXSSSSXX",
+					"SSSCSSSS",
+					"SSCSSSSS",
+					"SSSSSSSS",
+					"SSSSSSSS",
+					"SSSSSSSS"
+				}, 0, 3, 1, 2, 2, 120,{
+					"En el ultimo piso espera la cripta:",
+					"los esqueletos arqueros cuidan la torre.",
+					"Sus flechas llegan antes de que puedas",
+					"verlos: hay que cortarles el paso.",
+					"El codice resiste, pero no para siempre."
+				})
 	};
 }
 
@@ -116,7 +137,18 @@ std::vector<DatosAparicion> Catalogo::aparicionesPorDefecto() const {
 		DatosAparicion(2, 2, TipoEnemigo::GOLEM, 7, 1),
 		DatosAparicion(2, 2, TipoEnemigo::CABALLERO, 6, 4),
 		DatosAparicion(2, 2, TipoEnemigo::GOLEM, 7, 6),
-		DatosAparicion(2, 2, TipoEnemigo::ESPECTRO, 6, 7)
+		DatosAparicion(2, 2, TipoEnemigo::ESPECTRO, 6, 7),
+
+		// Nivel 3: todos salen de la ultima fila, que es la unica puerta de la cripta.
+		// Primera oleada: dos caballeros abren paso y un arquero dispara desde atras.
+		// Ultima: dos arqueros cruzados, un golem de escudo y un espectro que vuela por arriba de todo
+		DatosAparicion(3, 1, TipoEnemigo::CABALLERO, 7, 1),
+		DatosAparicion(3, 1, TipoEnemigo::CABALLERO, 7, 6),
+		DatosAparicion(3, 1, TipoEnemigo::ESQUELETO, 7, 3),
+		DatosAparicion(3, 2, TipoEnemigo::ESQUELETO, 7, 1),
+		DatosAparicion(3, 2, TipoEnemigo::GOLEM, 7, 3),
+		DatosAparicion(3, 2, TipoEnemigo::ESQUELETO, 7, 6),
+		DatosAparicion(3, 2, TipoEnemigo::ESPECTRO, 7, 4)
 	};
 }
 
@@ -192,6 +224,8 @@ std::unique_ptr<Enemigo> Catalogo::crearEnemigo(TipoEnemigo tipo, int fila, int 
 		return std::make_unique<Espectro>(fila, columna, vida, danio, datos.getAlcance());
 	case TipoEnemigo::GOLEM:
 		return std::make_unique<Golem>(fila, columna, vida, danio);
+	case TipoEnemigo::ESQUELETO:
+		return std::make_unique<EsqueletoArquero>(fila, columna, vida, danio, datos.getAlcance());
 	default:
 		return std::make_unique<Caballero>(fila, columna, vida, danio);
 	}

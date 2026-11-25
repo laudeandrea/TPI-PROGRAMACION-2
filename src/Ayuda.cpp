@@ -45,6 +45,7 @@ Ayuda::Ayuda(const Catalogo& catalogo) {
     const DatosEnemigo& caballero = catalogo.getDatosEnemigo(TipoEnemigo::CABALLERO);
     const DatosEnemigo& espectro = catalogo.getDatosEnemigo(TipoEnemigo::ESPECTRO);
     const DatosEnemigo& golem = catalogo.getDatosEnemigo(TipoEnemigo::GOLEM);
+    const DatosEnemigo& arquero = catalogo.getDatosEnemigo(TipoEnemigo::ESQUELETO);
 
     paginas[0].titulo = "EL OBJETIVO";
     paginas[0].lineas = {
@@ -133,15 +134,15 @@ Ayuda::Ayuda(const Catalogo& catalogo) {
     paginas[5].lineas = {
         "#Caballero (" + std::to_string(caballero.getVida()) + " de vida)",
         "Pega cuerpo a cuerpo: saca " + std::to_string(caballero.getDanio()) + ".",
-        "",
         "#Espectro (" + std::to_string(espectro.getVida()) + " de vida)",
         "Tira bolas desde " + std::to_string(espectro.getAlcance()) + " casillas: saca " + std::to_string(espectro.getDanio()) + ".",
         "Flota: cruza columnas y abismos.",
-        "",
         "#Golem (" + std::to_string(golem.getVida()) + " de vida)",
         "Explota al llegar o al morir: saca " + std::to_string(golem.getDanio()),
         "alrededor. Al abismo cae sin explotar.",
-        "",
+        "#Esqueleto arquero (" + std::to_string(arquero.getVida()) + " de vida)",
+        "Tira flechas desde " + std::to_string(arquero.getAlcance()) + " casillas: saca " + std::to_string(arquero.getDanio()) + ".",
+        "Pasan por arriba de columnas y pozos.",
         "Cada enemigo va por lo que tenga mas",
         "cerca: el mago o el codice."
     };
