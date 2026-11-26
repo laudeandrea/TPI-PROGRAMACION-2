@@ -53,6 +53,7 @@ std::vector<DatosEnemigo> Catalogo::enemigosPorDefecto() const {
 		DatosEnemigo(TipoEnemigo::ESPECTRO, "Espectro", 20, 6, 3),
 		// Golem: 40 de vida (era 60), 4 bolas. Con 60 casi nunca se lo mataba y su explosion al morir no se veia
 		DatosEnemigo(TipoEnemigo::GOLEM, "Golem", 40, 30, 1),          // pega fuerte, pero una sola vez
+		// Esqueleto arquero (piso 3): 2 bolas, como el caballero. Tira desde 4 casillas, una mas que la bola del mago
 		DatosEnemigo(TipoEnemigo::ESQUELETO, "Esqueleto arquero", 20, 9, 4)
 	};
 }
@@ -97,25 +98,25 @@ std::vector<DatosNivel> Catalogo::nivelesPorDefecto() const {
 				"las criaturas suben desde abajo.",
 				"Hay que cerrarles el paso."
 			}),
-			// Nivel 3: la prueba final. Dos abismos a los costados dejan un pasillo central y las columnas de
-			// (3,3) y (4,2) obligan a zigzaguear. Los arqueros se quedan a 4 casillas del codice y tiran desde ahi.
-			// El codice tiene 120 de vida (80 -> 100 -> 120)
-			DatosNivel(3,{
-					"SSSSSSSS",
-					"XXSSSSXX",
-					"XXSSSSXX",
-					"SSSCSSSS",
-					"SSCSSSSS",
-					"SSSSSSSS",
-					"SSSSSSSS",
-					"SSSSSSSS"
-				}, 0, 3, 1, 2, 2, 120,{
-					"En el ultimo piso espera la cripta:",
-					"los esqueletos arqueros cuidan la torre.",
-					"Sus flechas llegan antes de que puedas",
-					"verlos: hay que cortarles el paso.",
-					"El codice resiste, pero no para siempre."
-				})
+		// Nivel 3: la prueba final. Dos abismos a los costados dejan un pasillo central y las columnas de
+		// (3,3) y (4,2) obligan a zigzaguear. Los arqueros se quedan a 4 casillas del codice y tiran desde ahi.
+		// El codice tiene 120 de vida (80 -> 100 -> 120)
+		DatosNivel(3, {
+				"SSSSSSSS",
+				"XXSSSSXX",
+				"XXSSSSXX",
+				"SSSCSSSS",
+				"SSCSSSSS",
+				"SSSSSSSS",
+				"SSSSSSSS",
+				"SSSSSSSS"
+			}, 0, 3, 1, 2, 2, 120, {
+				"En el ultimo piso espera la cripta:",
+				"los esqueletos arqueros cuidan la torre.",
+				"Sus flechas llegan antes de que puedas",
+				"verlos: hay que cortarles el paso.",
+				"El codice resiste, pero no para siempre."
+			})
 	};
 }
 
@@ -140,15 +141,20 @@ std::vector<DatosAparicion> Catalogo::aparicionesPorDefecto() const {
 		DatosAparicion(2, 2, TipoEnemigo::ESPECTRO, 6, 7),
 
 		// Nivel 3: todos salen de la ultima fila, que es la unica puerta de la cripta.
-		// Primera oleada: dos caballeros abren paso y un arquero dispara desde atras.
-		// Ultima: dos arqueros cruzados, un golem de escudo y un espectro que vuela por arriba de todo
+		// Primera oleada: dos caballeros abren paso, un arquero dispara desde atras y un espectro vuela por arriba.
+		// Ultima: dos arqueros cruzados, un golem y un espectro que salen de las esquinas.
+		// Balance (simulacion de mil partidas): al principio era el piso mas facil de los tres. El golem salia en el
+		// medio, pegado al espectro, y como todos suben por el mismo pasillo su explosion mataba a sus companieros.
+		// Con el espectro de mas en la primera oleada y el golem y el espectro en las esquinas, queda como los otros
+		// pisos: en Normal el jugador "medio" gana 93 de cada 100 (antes 98)
 		DatosAparicion(3, 1, TipoEnemigo::CABALLERO, 7, 1),
 		DatosAparicion(3, 1, TipoEnemigo::CABALLERO, 7, 6),
 		DatosAparicion(3, 1, TipoEnemigo::ESQUELETO, 7, 3),
+		DatosAparicion(3, 1, TipoEnemigo::ESPECTRO, 7, 4),
 		DatosAparicion(3, 2, TipoEnemigo::ESQUELETO, 7, 1),
-		DatosAparicion(3, 2, TipoEnemigo::GOLEM, 7, 3),
+		DatosAparicion(3, 2, TipoEnemigo::GOLEM, 7, 0),
 		DatosAparicion(3, 2, TipoEnemigo::ESQUELETO, 7, 6),
-		DatosAparicion(3, 2, TipoEnemigo::ESPECTRO, 7, 4)
+		DatosAparicion(3, 2, TipoEnemigo::ESPECTRO, 7, 7)
 	};
 }
 
@@ -220,14 +226,14 @@ std::unique_ptr<Enemigo> Catalogo::crearEnemigo(TipoEnemigo tipo, int fila, int 
 	int vida = dificultad.ajustarVidaEnemigo(datos.getVida());
 	int danio = dificultad.ajustarDanioEnemigo(datos.getDanio());
 	switch (tipo) {
-	case TipoEnemigo::ESPECTRO:
-		return std::make_unique<Espectro>(fila, columna, vida, danio, datos.getAlcance());
-	case TipoEnemigo::GOLEM:
-		return std::make_unique<Golem>(fila, columna, vida, danio);
-	case TipoEnemigo::ESQUELETO:
-		return std::make_unique<EsqueletoArquero>(fila, columna, vida, danio, datos.getAlcance());
-	default:
-		return std::make_unique<Caballero>(fila, columna, vida, danio);
+		case TipoEnemigo::ESPECTRO:
+			return std::make_unique<Espectro>(fila, columna, vida, danio, datos.getAlcance());
+		case TipoEnemigo::GOLEM:
+			return std::make_unique<Golem>(fila, columna, vida, danio);
+		case TipoEnemigo::ESQUELETO:
+			return std::make_unique<EsqueletoArquero>(fila, columna, vida, danio, datos.getAlcance());
+		default:
+			return std::make_unique<Caballero>(fila, columna, vida, danio);
 	}
 }
 

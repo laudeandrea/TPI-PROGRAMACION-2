@@ -9,12 +9,13 @@ int Enemigo::getDanio() const {
 	return danio;
 }
 
-bool Enemigo::puedeIrA(const Mapa& mapa, int fila, int columna) const {
-	if (!mapa.esValida(fila, columna)) {
-		return false;   // fuera del tablero: nunca, porque getTipoTerreno no valida
+// Los parametros llevan "_" porque fila y columna ya son atributos (la casilla donde esta el enemigo)
+bool Enemigo::puedeIrA(const Mapa& mapa, int _fila, int _columna) const {
+	if (!mapa.esValida(_fila, _columna)) {
+		return false; // fuera del tablero: nunca, porque getTipoTerreno no valida
 	}
-	return puedePisar(mapa.getTipoTerreno(fila, columna));
-};
+	return puedePisar(mapa.getTipoTerreno(_fila, _columna));
+}
 
 sf::Vector2i Enemigo::calcularPaso(const Mapa& mapa, int filaObjetivo, int columnaObjetivo) const {
 	int dFila = filaObjetivo - getFila();
@@ -66,7 +67,7 @@ int Enemigo::getAlcanceAtaque() const {
 	return 1;
 }
 
-bool Enemigo::puedeAtacar(int filaObjetivo, int columnaObjetivo) const{
+bool Enemigo::puedeAtacar(int filaObjetivo, int columnaObjetivo) const {
 	int distancia = std::abs(filaObjetivo - fila) + std::abs(columnaObjetivo - columna);
 	return distancia >= 1 && distancia <= getAlcanceAtaque(); // virtual: cada enemigo dice su alcance
 }

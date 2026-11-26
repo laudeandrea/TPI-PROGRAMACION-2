@@ -3,7 +3,7 @@
 
 // Ataca de lejos y flota. La vida, el danio y el alcance salen de TiposEnemigo.dat
 class Espectro : public Enemigo {
-    private:
+	private:
 		int alcanceAtaque;
 	public:
 		Espectro(int _fila, int _columna, int _vida, int _danio, int _alcanceAtaque);

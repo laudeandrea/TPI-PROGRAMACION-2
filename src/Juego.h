@@ -1,7 +1,8 @@
 #pragma once
-
-#include "PartidaArchivo.h"
 #include <SFML/Graphics.hpp>
+#include <memory>
+#include <vector>
+#include "PartidaArchivo.h"
 #include "Sonidos.h"
 #include "Camara.h"
 #include "Catalogo.h"
@@ -14,35 +15,38 @@
 #include "Pergamino.h"
 #include "Proyectil.h"
 #include "Hud.h"
-#include <memory>
-#include <vector>
 
-enum class EstadoJuego{
-    MENU,
-    ELEGIR_DIFICULTAD, // la pantalla de Facil / Normal / Dificil, al elegir "Nueva partida"
-    COMO_JUGAR,     // la pantalla de ayuda que se abre desde el menu
-    HISTORIA,       // el cartel con la historia del piso, antes de empezar a jugarlo
-    JUGANDO,
-    NIVEL_SUPERADO, // se gano un nivel y hay otro: cartel con la historia del proximo y "Enter para seguir"
-    GANASTE,        // se gano el ultimo nivel: se muestra el cartel de victoria
-    PERDISTE        // murio el mago o destruyeron el codice
+// En que pantalla esta el juego. Cada una lee las teclas y dibuja distinto (ver procesarEventos y dibujar)
+enum class EstadoJuego {
+	MENU,
+	ELEGIR_DIFICULTAD, // la pantalla de Facil / Normal / Dificil, al elegir "Nueva partida"
+	COMO_JUGAR,        // la pantalla de ayuda que se abre desde el menu
+	HISTORIA,          // el cartel con la historia del piso, antes de empezar a jugarlo
+	JUGANDO,
+	NIVEL_SUPERADO,    // se gano un nivel y hay otro: cartel con la historia del proximo y "Enter para seguir"
+	GANASTE,           // se gano el ultimo nivel: se muestra el cartel de victoria
+	PERDISTE           // murio el mago o destruyeron el codice
 };
 
 // El turno de los enemigos tiene dos partes: primero ejecutan los ataques que habian anunciado
-// (y se espera a que lleguen las bolas), despues caminan y anuncian el proximo.
+// (y se espera a que lleguen las bolas y las flechas), despues caminan y anuncian el proximo.
 enum class FaseTurno {
 	JUGADOR,
 	DISPARANDO,       // la bola del mago esta volando: nadie se mueve hasta que llegue
 	ENEMIGOS_ATACAN,  // los enemigos ejecutan los ataques que anunciaron (dura un cuadro)
-	ENEMIGOS_ESPERAN  // vuelan las bolas de los espectros y se ven los golpes; despues caminan y anuncian
+	ENEMIGOS_ESPERAN  // vuelan las bolas y las flechas y se ven los golpes; despues caminan y anuncian
 };
 
+/* El juego entero: la ventana, el game loop y las reglas. Tiene el catalogo (lo que se leyo de Datos/), el mago,
+*  el nivel que se esta jugando y las pantallas (menu, dificultad, ayuda, HUD). En cada vuelta del game loop lee
+*  los eventos, avanza el turno (el del jugador llega por los eventos; el de los enemigos, en jugarTurno) y dibuja.
+*  Es el "Juego" del diagrama de clases (nivelActual, iniciar, jugarTurno y cambiarNivel). */
 class Juego {
 	private:
 		static const int ANCHO_VENTANA = 1280;
 		static const int ALTO_VENTANA = 720;
 		static constexpr float MARGEN_CAMARA = 64.f; // espacio alrededor del tablero para el HUD
-		static constexpr float ALTURA_PECHO = 30.f;  // desde los pies hasta el pecho: de ahi sale y ahi pega la bola
+		static constexpr float ALTURA_PECHO = 30.f;  // desde los pies hasta el pecho: de ahi salen y ahi pegan los proyectiles
 		static constexpr float ALTURA_CABEZA = 72.f; // desde los pies hasta arriba de la cabeza: ahi aparece el numero de danio
 		static constexpr float ALTURA_CODICE = 54.f; // lo mismo para el codice (su imagen sobresale 46 px del centro de la casilla)
 		static constexpr float DURACION_EXPLOSION = 0.5f; // segundos que se ven las casillas rojas de un golpe
@@ -88,9 +92,10 @@ class Juego {
 		bool magoSeleccionado;  // se hizo click en el mago: se muestran las casillas a las que puede ir
 		bool magoSeMovio;       // ya camino este turno: puede tirar una habilidad o pasar, pero no volver a moverse
 
-		// Marcadores de casillas (movimiento, alcance de la habilidad, ataques anunciados) y las bolas que vuelan
-		sf::Texture texturaMovimiento, texturaAlcance, texturaObjetivo, texturaPeligro, texturaBola, texturaBolaEspectro, texturaFlecha;
-		std::vector<std::unique_ptr<Proyectil>> proyectiles; // vacio cuando no hay ninguna bola volando
+		// Marcadores de casillas (movimiento, alcance de la habilidad, ataques anunciados) y los proyectiles
+		sf::Texture texturaMovimiento, texturaAlcance, texturaObjetivo, texturaPeligro;
+		sf::Texture texturaBola, texturaBolaEspectro, texturaFlecha;
+		std::vector<std::unique_ptr<Proyectil>> proyectiles; // vacio cuando no hay ningun proyectil volando
 		std::vector<Explosion> explosiones;
 		std::vector<Muro> muros; // las casillas de fuego que hay ahora en el tablero
 		Hud hud;
@@ -114,8 +119,8 @@ class Juego {
 		void dibujarMarcador(const sf::Texture& textura, int fila, int columna);
 		// Las casillas que recibieron un golpe hace poco, en rojo y desvaneciendose.
 		void dibujarExplosiones();
-		// Hace avanzar el turno: la bola del mago vuela y, cuando les toca, los enemigos atacan, esperan sus bolas
-		// y caminan. (Lo que hace el jugador en su turno llega por los eventos: ver procesarEventoJugando.)
+		// Hace avanzar el turno: la bola del mago vuela y, cuando les toca, los enemigos atacan, esperan sus bolas y
+		// flechas y caminan. (Lo que hace el jugador en su turno llega por los eventos: ver procesarEventoJugando.)
 		void jugarTurno(float dt);
 		// Casillas a las que puede llegar caminando como mucho pasosMaximos pasos (sin contar la suya).
 		// Rodea lo que no puede pisar (abismo, columnas, otros personajes). Cada casilla: x = columna, y = fila.
@@ -204,7 +209,7 @@ class Juego {
 		void daniarCasilla(int fila, int columna, int danio);
 		// Lo que pasa cuando un enemigo muere por un golpe: su ataqueAlMorir (la explosion del golem).
 		void alMorirEnemigo(const Enemigo& enemigo);
-		// Mueve las bolas que estan volando. Las que llegan hacen su danio y se borran.
+		// Mueve los proyectiles que estan volando. Los que llegan hacen su danio, suenan y se borran.
 		void moverProyectiles(float dt);
 		// Saca del vector a los enemigos que quedaron sin vida.
 		void sacarMuertos();

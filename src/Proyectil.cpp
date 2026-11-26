@@ -1,14 +1,22 @@
 #include "Proyectil.h"
 #include <cmath>
 
-// La textura es una referencia, y las referencias SOLO se pueden inicializar en la lista de inicializacion
-Proyectil::Proyectil(sf::Vector2f _origen, sf::Vector2f _destino, const sf::Texture& _textura,
-	int _danio, int _filaObjetivo, int _columnaObjetivo,
-	int _anchoCuadro, int _altoCuadro, int _cantCuadros, bool _rota)
-	: posicion(_origen), destino(_destino), textura(_textura), tiempoVivo(0.f), llego(false),
-	anchoCuadro(_anchoCuadro), altoCuadro(_altoCuadro), cantCuadros(_cantCuadros), rota(_rota),
-	danio(_danio), filaObjetivo(_filaObjetivo), columnaObjetivo(_columnaObjetivo)
-{
+// La textura es una referencia, y las referencias SOLO se pueden inicializar en la lista de inicializacion.
+// Los atributos van en el mismo orden que en el .h: C++ los inicializa en ese orden, no en el de esta lista
+Proyectil::Proyectil(TipoProyectil _tipo, sf::Vector2f _origen, sf::Vector2f _destino, const sf::Texture& _textura,
+	int _danio, int _filaObjetivo, int _columnaObjetivo)
+	: tipo(_tipo), posicion(_origen), destino(_destino), textura(_textura), tiempoVivo(0.f), llego(false),
+	  anchoCuadro(16), altoCuadro(16), cantCuadros(2), rota(false),
+	  danio(_danio), filaObjetivo(_filaObjetivo), columnaObjetivo(_columnaObjetivo) {
+	// Las bolas (la del mago y la del espectro) son 2 cuadros de 16x16 uno al lado del otro: los valores de arriba.
+	// La flecha es un solo dibujo de 36x14 que apunta a la derecha: se gira hacia donde vuela (ver mostrar)
+	if (tipo == TipoProyectil::FLECHA) {
+		anchoCuadro = 36;
+		altoCuadro = 14;
+		cantCuadros = 1;
+		rota = true;
+	}
+
 	// La direccion es el camino completo dividido por su largo: queda un "paso" de largo 1 hacia el destino
 	sf::Vector2f camino = destino - posicion;
 	float largo = std::sqrt(camino.x * camino.x + camino.y * camino.y);
@@ -59,6 +67,10 @@ void Proyectil::mostrar(sf::RenderWindow& ventana) const {
 	}
 
 	ventana.draw(sprite);
+}
+
+TipoProyectil Proyectil::getTipo() const {
+	return tipo;
 }
 
 bool Proyectil::yaLlego() const {

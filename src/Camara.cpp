@@ -11,7 +11,7 @@ Camara::Camara(sf::Vector2f tamanioMundo, float margen) {
 	// Viewport: en que pedazo de la ventana se dibuja esta vista, en proporcion (0 a 1).
 	// (0, 0, 0.75, 1) = desde la izquierda, el 75 % del ancho y todo el alto. A la derecha queda lugar para el HUD
 	vista.setViewport(sf::FloatRect(0.f, 0.f, PARTE_TABLERO, 1.f));
-};
+}
 
 // Agranda la vista del lado que sobra para que tenga la misma proporcion que su pedazo de ventana (asi no se deforma)
 void Camara::ajustarAVentana(sf::Vector2u tamanioVentana) {
@@ -27,12 +27,12 @@ void Camara::ajustarAVentana(sf::Vector2u tamanioVentana) {
 		// Ventana más alta = sobra espacio arriba y abajo
 		vista.setSize(areaVisible.x, areaVisible.x / proporcionVentana);
 	}
-};
+}
 
 void Camara::aplicar(sf::RenderWindow& ventana) const {
 	ventana.setView(vista);
-};
+}
 
 const sf::View& Camara::getVista() const {
 	return vista;
-};
+}

@@ -1,7 +1,7 @@
 #include "Caballero.h"
 
 Caballero::Caballero(int _fila, int _columna, int _vida, int _danio) : Enemigo(_fila, _columna, _vida, _danio) {
-    textura.loadFromFile("Imagenes/caballero_64.png");
+	textura.loadFromFile("Imagenes/caballero_64.png");
 }
 
 TipoEnemigo Caballero::getTipo() const {

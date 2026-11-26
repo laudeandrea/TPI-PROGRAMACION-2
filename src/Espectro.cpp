@@ -2,8 +2,8 @@
 
 Espectro::Espectro(int _fila, int _columna, int _vida, int _danio, int _alcanceAtaque)
 	: Enemigo(_fila, _columna, _vida, _danio), alcanceAtaque(_alcanceAtaque) {
-   textura.loadFromFile("Imagenes/espectro_64.png");
-};
+	textura.loadFromFile("Imagenes/espectro_64.png");
+}
 
 TipoEnemigo Espectro::getTipo() const {
 	return TipoEnemigo::ESPECTRO;
@@ -15,15 +15,15 @@ bool Espectro::puedePisar(TipoTerreno terreno) const {
 		|| terreno == TipoTerreno::COLUMNAROTA
 		|| terreno == TipoTerreno::ABISMO
 		|| terreno == TipoTerreno::MURO;
-};
+}
 
 int Espectro::getAlcanceAtaque() const {
 	return alcanceAtaque;
-};
+}
 
 bool Espectro::atacaADistancia() const {
 	return true;
-};
+}
 
 bool Espectro::mover(const Mapa& mapa, const std::vector<std::vector<bool>>& ocupadas, int filaObjetivo, int columnaObjetivo) {
 	// Vuela: el mismo camino mas corto que los demas, pero como puedePisar deja pasar pozos, columnas y fuego,

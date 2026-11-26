@@ -71,6 +71,15 @@ Para entender cómo está armado el código, primero leé la sección "Cómo fun
 - **Comentarios:** que expliquen el *por qué*, no lo que ya se lee en el código. Los métodos importantes
   se documentan en el `.h` con un comentario normal (`//`) justo arriba de la declaración. No usamos
   formato Doxygen (`/** @brief ... */`).
+- **Cada clase lleva un comentario arriba** (en el `.h`, justo antes de `class`) que diga qué es y para qué está.
+- **Forma de un `.h`:** `#pragma once`, los `#include` (primero SFML y la biblioteca estándar, después los del
+  proyecto), el comentario de la clase y la clase. Adentro, `private:` / `public:` con un tab y los miembros con
+  dos. Primero las constantes, después los atributos y al final los métodos.
+- **Llaves:** la que abre va en la misma línea (`void Mapa::mostrar() {`, `if (vida < 0) {`), y el `else` va en
+  la línea de abajo del `}`. Después del `}` de una función no va `;` (solo después de `class`, `struct` y `enum`).
+- **Constructores:** los atributos se inicializan en la lista de inicialización (`: fila(_fila), vida(_vida)`), en el
+  mismo orden en que están declarados en el `.h` (C++ los inicializa en ese orden, no en el de la lista).
+- **Parámetros con `_`** cuando se llaman igual que un atributo (`setVida(int _vida)`), para no taparlo.
 
 ## Posiciones y dibujo
 
@@ -195,8 +204,9 @@ igual que el menú. Tiene 6 páginas. `Imagenes/vista_previa_ayuda.png` muestra 
 - **Sin tildes,** como el resto de los textos del juego.
 - **Los dibujos** son un tablerito de 3×3 armado con las mismas baldosas y personajes del juego, agrandado
   x2 sin suavizar. Si cambia una baldosa o un personaje, hay que volver a armarlos.
-- **Página 6 (ENEMIGOS):** el texto ya describe a los cuatro enemigos, pero `ayuda_6.png` todavía muestra los
-  tres de antes (caballero, espectro y golem): hay que volver a armarlo con el esqueleto arquero.
+- **Página 6 (ENEMIGOS):** los cuatro enemigos en rombo, para que ninguno tape a otro (en el tablerito de 3×3
+  no entran cuatro en fila): caballero a la izquierda, espectro atrás, golem a la derecha y el esqueleto
+  arquero adelante. El texto ocupa las 13 líneas: si se agrega otro enemigo, no entra en esta página.
 - **Los números de las reglas** (vida, daño, maná, alcance, en qué piso se aprende cada habilidad) se arman con
   `std::to_string` a partir del `Catalogo`: si se cambia un `.dat`, la ayuda se actualiza sola. Lo único escrito
   a mano es el movimiento y el maná del mago (página 2). Los números son los de la dificultad **Normal** (la

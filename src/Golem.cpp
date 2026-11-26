@@ -26,7 +26,9 @@ bool Golem::mover(const Mapa& mapa, const std::vector<std::vector<bool>>& ocupad
 	return darPaso(mapa, ocupadas, filaObjetivo, columnaObjetivo);
 }
 
-Ataque Golem::planearAtaque(int filaObjetivo, int columnaObjetivo) const {
+// Los nombres de los parametros van comentados porque no se usan (asi el compilador no avisa).
+// Tienen que estar igual: es la misma funcion que en Enemigo (override)
+Ataque Golem::planearAtaque(int /*filaObjetivo*/, int /*columnaObjetivo*/) const {
 	// No importa a quien apuntaba: explota alrededor suyo
 	return explosion();
 }

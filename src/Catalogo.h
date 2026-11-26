@@ -38,7 +38,7 @@ class Catalogo {
 		std::vector<DatosDificultad> dificultadesPorDefecto() const;
 
 		// Lee un archivo; si no existe o esta vacio, lo crea con esos registros y devuelve esos mismos.
-		// Es una plantilla (como Archivo<T>): sirve para los cuatro tipos de registro.
+		// Es una plantilla (como Archivo<T>): sirve para los cinco tipos de registro.
 		template <typename T>
 		std::vector<T> leerOCrear(const std::string& ruta, const std::vector<T>& porDefecto) const;
 

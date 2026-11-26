@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <cstdlib> // std::abs
 
-// La ventana, la camara y el nivel se crean en la lista de inicializacion (despues de los ":")
-// porque no tienen constructor sin parametros. Lo demas (imagenes, nivel 1, musica) lo prepara iniciar()
+// La ventana, el mago, el nivel, la camara, el menu de dificultad y la ayuda se crean en la lista de inicializacion
+// (despues de los ":") porque no tienen constructor sin parametros. Lo demas (imagenes, nivel 1, musica) lo
+// prepara iniciar()
 Juego::Juego()
 	: window(sf::VideoMode(ANCHO_VENTANA, ALTO_VENTANA), "El Codice Del Mago"),
 	  // El mago se crea en cualquier casilla: empezarNivel(1) lo pone donde dice el nivel
@@ -20,26 +21,25 @@ Juego::Juego()
 	  tiempoVolumen(DURACION_AVISO_VOLUMEN), // arranca "vencido": no se muestra hasta que se toque el volumen
 	  habilidadPreparada(HabilidadSeleccionada::NINGUNA),
 	  magoSeleccionado(false),
-	  magoSeMovio(false)
-{
+	  magoSeMovio(false) {
 }
 
 void Juego::iniciar() {
-	//Inicialización de la ventana
+	// La ventana dibuja como mucho 60 cuadros por segundo (asi no usa el 100 % del procesador)
 	window.setFramerateLimit(60);
 
 	// Icono de la ventana
 	sf::Image icono;
 	if (icono.loadFromFile("Imagenes/icono_ventana.png")) {
 		window.setIcon(icono.getSize().x, icono.getSize().y, icono.getPixelsPtr());
-	};
+	}
 
 	// Fondo de la pantalla de juego (se dibuja fijo, detras del tablero)
 	texturaFondo.loadFromFile("Imagenes/fondo_juego.png");
 	fondo.setTexture(texturaFondo);
 
 	// Marcadores de las casillas (a donde camina, a donde llega la habilidad, a donde van a pegar los enemigos)
-	// y las bolas (la del mago y la de los espectros)
+	// y los proyectiles (la bola del mago, la del espectro y la flecha del arquero)
 	texturaMovimiento.loadFromFile("Imagenes/marcador_movimiento.png");
 	texturaAlcance.loadFromFile("Imagenes/marcador_alcance.png");
 	texturaObjetivo.loadFromFile("Imagenes/marcador_objetivo.png");
@@ -54,9 +54,8 @@ void Juego::iniciar() {
 	empezarNivel(1);
 	sonidos.iniciarMusica(); // la musica de fondo arranca ya en el menu
 
-	//GameLoop (update del juego)
-	while (window.isOpen())
-	{
+	// Game loop: en cada vuelta se leen los eventos, se avanza el juego y se dibuja un cuadro
+	while (window.isOpen()) {
 		// restart() devuelve el tiempo desde la vuelta anterior y vuelve a empezar a contar
 		float dt = reloj.restart().asSeconds();
 
@@ -64,9 +63,9 @@ void Juego::iniciar() {
 		actualizar(dt);
 		dibujar();
 	}
-};
+}
 
-// Leer la cola de mensajes
+// Lee los eventos que junto la ventana desde el cuadro anterior (teclas, mouse, cerrar) y los reparte segun la pantalla
 void Juego::procesarEventos() {
 	sf::Event event;
 	while (window.pollEvent(event)) {
@@ -166,7 +165,7 @@ void Juego::procesarEventos() {
 		}
 	}
 
-};
+}
 
 void Juego::procesarEventoJugando(const sf::Event& event) {
 	// Escape guarda y vuelve al menu
@@ -221,7 +220,7 @@ void Juego::procesarEventoJugando(const sf::Event& event) {
 		}
 	}
 
-	// Habilidades del mago: 1 la bola, 2 el empuje (idea de Santiago: reemplazan a la Q), 3 el muro de fuego.
+	// Habilidades del mago: 1 la bola, 2 el empuje (idea de Santiago), 3 el muro de fuego.
 	// Si se apreta la misma otra vez, se cancela
 	if (event.type == sf::Event::KeyPressed) {
 		// Que numero se apreto (0 = ninguno)
@@ -245,7 +244,7 @@ void Juego::procesarEventoJugando(const sf::Event& event) {
 bool Juego::casillaOcupada(int fila, int columna) const {
 	if (mago.estaEn(fila, columna)) return true;
 	return buscarEnemigoEn(fila, columna) != nullptr;
-};
+}
 
 bool Juego::puedeMover(const Personaje& quien, int fila, int columna) const {
 	const Mapa& mapa = nivelActual.getMapa();
@@ -256,21 +255,24 @@ bool Juego::puedeMover(const Personaje& quien, int fila, int columna) const {
 		return false;
 	}
 	return !casillaOcupada(fila, columna);
-};
+}
 
 // ---------------------------------------------------------------- Dibujo
 
 void Juego::dibujar() {
 	window.clear();
 
-	if(estado == EstadoJuego::MENU){
+	if (estado == EstadoJuego::MENU) {
 		menu.setHayPartida(partidaArchivo.existe());
 		menu.dibujar(window);
-	}else if (estado == EstadoJuego::ELEGIR_DIFICULTAD) {
+	}
+	else if (estado == EstadoJuego::ELEGIR_DIFICULTAD) {
 		menuDificultad.dibujar(window);
-	}else if (estado == EstadoJuego::COMO_JUGAR) {
+	}
+	else if (estado == EstadoJuego::COMO_JUGAR) {
 		ayuda.dibujar(window);
-	}else{
+	}
+	else {
 		dibujarTablero();
 
 		// Carteles: arriba de todo, con el tablero oscurecido atras (sin tildes: SFML no las muestra bien)
@@ -310,7 +312,7 @@ void Juego::dibujar() {
 	}
 
 	window.display();
-};
+}
 
 void Juego::dibujarTablero() {
 	// Lo que tiene el nivel que se esta jugando
@@ -367,7 +369,7 @@ void Juego::dibujarTablero() {
 		enemigo->mostrarBarraVida(window, mapa);
 	}
 
-	// Las bolas vuelan por encima de todo
+	// Los proyectiles (bolas y flechas) vuelan por encima de todo
 	for (const auto& proyectil : proyectiles) {
 		proyectil->mostrar(window);
 	}
@@ -595,7 +597,7 @@ void Juego::jugarTurno(float dt) {
 		return;
 	}
 
-	// Segunda parte: cuando llegan las bolas de los espectros (y paso un momento para ver los golpes), caminan
+	// Segunda parte: cuando llegan las bolas y las flechas (y paso un momento para ver los golpes), caminan
 	if (fase == FaseTurno::ENEMIGOS_ESPERAN) {
 		moverProyectiles(dt);
 		tiempoFase += dt;
@@ -761,7 +763,7 @@ void Juego::revisarFinDePartida() {
 }
 
 void Juego::guardarPartidaEnCurso() {
-	// En el turno de los enemigos hay cosas a medio pasar (bolas volando): no se guarda.
+	// En el turno de los enemigos hay cosas a medio pasar (proyectiles volando): no se guarda.
 	// Un nivel ya ganado tampoco: lo que queda guardado es el que sigue (ver revisarFinDePartida)
 	if (fase != FaseTurno::JUGADOR || nivelActual.estaCompletado()) return;
 
@@ -860,7 +862,8 @@ void Juego::usarHabilidad(int fila, int columna) {
 		sf::Vector2f origen = mapa.casillaAmundo(mago.getFila(), mago.getColumna()) - altura;
 		sf::Vector2f destino = mapa.casillaAmundo(fila, columna) - altura;
 
-		proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBola, ataque.danio, fila, columna));
+		proyectiles.push_back(std::make_unique<Proyectil>(TipoProyectil::BOLA_ENERGIA, origen, destino, texturaBola,
+			ataque.danio, fila, columna));
 		sonidos.reproducirBola();
 		fase = FaseTurno::DISPARANDO;
 	}
@@ -1019,16 +1022,20 @@ void Juego::ejecutarAtaquesEnemigos() {
 		quemarSiEstaEnFuego(enemigo);
 		if (!enemigo.estaVivo() || !enemigo.tieneAtaqueAnunciado()) continue;
 
-		// virtual: cada tipo ataca a su manera (el caballero golpea, el espectro tira una bola, el golem
-		// explota y se destruye). Devuelve las casillas que habia marcado y borra el anuncio
+		// virtual: cada tipo ataca a su manera (el caballero golpea, el espectro tira una bola, el arquero una
+		// flecha, el golem explota y se destruye). Devuelve las casillas que habia marcado y borra el anuncio
 		Ataque ataque = enemigo.atacar();
 		alguienAtaco = true;
 
-		// El espectro tira una bola y el golem explota (suenan distinto); el caballero pega cuerpo a cuerpo
-		if (enemigo.atacaADistancia()) {
+		// Cada uno suena distinto. Los dos que atacan de lejos tiran un proyectil distinto (bola o flecha)
+		TipoEnemigo tipo = enemigo.getTipo();
+		if (tipo == TipoEnemigo::ESQUELETO) {
+			sonidos.reproducirDisparoArco();
+		}
+		else if (tipo == TipoEnemigo::ESPECTRO) {
 			sonidos.reproducirAtaqueEspectro();
 		}
-		else if (enemigo.getTipo() == TipoEnemigo::GOLEM) {
+		else if (tipo == TipoEnemigo::GOLEM) {
 			sonidos.reproducirExplosion();
 		}
 		else {
@@ -1044,15 +1051,14 @@ void Juego::ejecutarAtaquesEnemigos() {
 				sf::Vector2f origen = mapa.casillaAmundo(enemigo.getFila(), enemigo.getColumna()) - altura;
 				sf::Vector2f destino = mapa.casillaAmundo(casilla.y, casilla.x) - altura;
 
-				// El arquero tira una flecha (36x14, un solo dibujo, girada hacia donde va);
-				// el espectro, la bola de ectoplasma de siempre (2 cuadros de 16x16)
-				if (enemigo.getTipo() == TipoEnemigo::ESQUELETO) {
-					proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaFlecha,
-						ataque.danio, casilla.y, casilla.x, 36, 14, 1, true));
+				// El arquero tira una flecha; el espectro, su bola de ectoplasma
+				if (tipo == TipoEnemigo::ESQUELETO) {
+					proyectiles.push_back(std::make_unique<Proyectil>(TipoProyectil::FLECHA, origen, destino, texturaFlecha,
+						ataque.danio, casilla.y, casilla.x));
 				}
 				else {
-					proyectiles.push_back(std::make_unique<Proyectil>(origen, destino, texturaBolaEspectro,
-						ataque.danio, casilla.y, casilla.x));
+					proyectiles.push_back(std::make_unique<Proyectil>(TipoProyectil::BOLA_ESPECTRO, origen, destino,
+						texturaBolaEspectro, ataque.danio, casilla.y, casilla.x));
 				}
 			}
 			else {
@@ -1183,11 +1189,16 @@ void Juego::moverProyectiles(float dt) {
 			for (const sf::Vector2i& casilla : golpe.casillas) {
 				daniarCasilla(casilla.y, casilla.x, golpe.danio);
 			}
-			sonidos.reproducirImpacto();
+			if (proyectil->getTipo() == TipoProyectil::FLECHA) {
+				sonidos.reproducirImpactoFlecha();
+			}
+			else {
+				sonidos.reproducirImpacto();
+			}
 		}
 	}
 
-	// Borra las que ya llegaron (mismo truco que con los enemigos muertos)
+	// Borra los que ya llegaron (mismo truco que con los enemigos muertos)
 	proyectiles.erase(std::remove_if(proyectiles.begin(), proyectiles.end(),
 		[](const std::unique_ptr<Proyectil>& p) { return p->yaLlego(); }), proyectiles.end());
 }
@@ -1206,7 +1217,7 @@ int Juego::distanciaAlMago(int fila, int columna) const {
 	return distancia(fila, columna, mago.getFila(), mago.getColumna());
 }
 
-Enemigo* Juego::buscarEnemigoEn(int fila, int columna) const{
+Enemigo* Juego::buscarEnemigoEn(int fila, int columna) const {
 	for (const auto& enemigo : nivelActual.getEnemigos()) {
 			// Los muertos todavia pueden estar en el vector hasta que se saquen: esos no cuentan
 			if (enemigo->estaVivo() && enemigo->estaEn(fila,columna)) {

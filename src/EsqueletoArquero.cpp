@@ -11,10 +11,12 @@ TipoEnemigo EsqueletoArquero::getTipo() const {
 
 bool EsqueletoArquero::mover(const Mapa& mapa, const std::vector<std::vector<bool>>& ocupadas,
 	int filaObjetivo, int columnaObjetivo) {
+	// El mismo camino mas corto que el caballero; la diferencia es que frena antes (desde 4 casillas ya le llega)
 	return darPaso(mapa, ocupadas, filaObjetivo, columnaObjetivo);
 }
 
 Ataque EsqueletoArquero::atacar() {
+	// La flecha va a la casilla que marco; el Juego crea el Proyectil y el danio se aplica cuando llega
 	return tomarAtaqueAnunciado();
 }
 

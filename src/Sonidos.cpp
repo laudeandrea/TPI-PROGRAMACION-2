@@ -19,12 +19,15 @@ Sonidos::Sonidos() {
 	cargar(bufferDerrota, derrota, "Sonidos/derrota.ogg", 80.f);
 	cargar(bufferExplosion, explosion, "Sonidos/explosion_golem.wav", 70.f);
 	cargar(bufferQuemadura, quemadura, "Sonidos/quemadura.wav", 60.f);
+	cargar(bufferDisparoArco, disparoArco, "Sonidos/arco_disparo.wav", 70.f);
+	cargar(bufferVueloFlecha, vueloFlecha, "Sonidos/flecha_vuelo.wav", 50.f); // mas bajo: acompania al disparo
+	cargar(bufferImpactoFlecha, impactoFlecha, "Sonidos/flecha_impacto.wav", 80.f);
 
 	if (!musica.openFromFile("Sonidos/musica_medieval.wav")) {
 		std::cout << "No se pudo cargar Sonidos/musica_medieval.wav\n";
 	}
 	musica.setLoop(true);
-	musica.setVolume(7.f); 
+	musica.setVolume(7.f);
 }
 
 void Sonidos::iniciarMusica() {
@@ -60,6 +63,15 @@ void Sonidos::reproducirAtaque() {
 
 void Sonidos::reproducirAtaqueEspectro() {
 	ataqueEspectro.play();
+}
+
+void Sonidos::reproducirDisparoArco() {
+	disparoArco.play();
+	vueloFlecha.play(); // al mismo tiempo: el archivo ya empieza suave, asi se escucha despues del disparo
+}
+
+void Sonidos::reproducirImpactoFlecha() {
+	impactoFlecha.play();
 }
 
 void Sonidos::reproducirInicio() {

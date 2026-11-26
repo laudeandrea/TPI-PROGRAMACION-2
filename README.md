@@ -63,7 +63,7 @@ Antes de cada piso aparece un cartel con la historia (Enter para empezar).
 |---|---|---|
 | 1 | El códice a la izquierda, los enemigos salen de la derecha. | 1) caballero y espectro. 2) caballero, espectro y golem. |
 | 2 | Dos pozos parten el tablero. El códice está arriba y los enemigos salen de abajo: para llegar pasan por el medio o por los bordes ([vista previa](Imagenes/vista_previa_nivel2.png)). Se aprende el **muro de fuego**. | 1) dos caballeros y un espectro. 2) dos golems, un caballero y un espectro. |
-| 3 | La cripta: dos abismos a los costados y dos columnas en el medio obligan a zigzaguear por el pasillo central. Aparece el **esqueleto arquero**. | 1) dos caballeros y un arquero. 2) dos arqueros, un golem y un espectro. |
+| 3 | La cripta: dos abismos a los costados y dos columnas en el medio obligan a zigzaguear por el pasillo central. Aparece el **esqueleto arquero**. | 1) dos caballeros, un arquero y un espectro. 2) dos arqueros, y un golem y un espectro que salen de las esquinas. |
 
 Todo esto (tableros, oleadas, vida y daño de cada enemigo, valores de cada habilidad y la historia) está en los
 archivos de `Datos/`, no en el código: ver "Los archivos de datos".
@@ -161,7 +161,7 @@ build/                 Generado al compilar (ignorado por git)
 | `MagoGuardado` | `MagoGuardado.h` / `.cpp` | El registro de `Mago.dat`: vida, maná, casilla y si ya había caminado en ese turno. |
 | `EnemigoGuardado` | `EnemigoGuardado.h` / `.cpp` | Un registro de `Enemigos.dat`: tipo, casilla, vida y el ataque que tenía anunciado. Se arma directo desde un `Enemigo`. |
 | `PartidaArchivo` | `PartidaArchivo.h` / `PartidaArchivo.cpp` | Maneja los tres archivos de la partida guardada con un `Archivo<T>` para cada uno. `guardar()` guarda un nivel sin empezar, `guardarEnCurso()` uno por la mitad, `leer()` / `leerMago()` / `leerEnemigos()` los leen y `borrar()` los elimina. |
-| `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Lo que vuela hasta una casilla y guarda el daño que va a hacer. `mover()` lo hace avanzar en su `direccion` y, al llegar, `colisionar()` devuelve el `Ataque` (su casilla y su daño). La imagen es configurable: tamaño de cada cuadro, cantidad de cuadros (animación) y si gira para apuntar hacia donde va. Así sirve para la bola de energía del mago y la del espectro (2 cuadros de 16×16) y para la flecha del arquero (36×14, un solo dibujo, girada). |
+| `Proyectil` | `Proyectil.h` / `Proyectil.cpp` | Lo que vuela hasta una casilla y guarda el daño que va a hacer. `mover()` lo hace avanzar en su `direccion` y, al llegar, `colisionar()` devuelve el `Ataque` (su casilla y su daño). Tiene un tipo (`TipoProyectil`: `BOLA_ENERGIA`, `BOLA_ESPECTRO` o `FLECHA`) que decide cómo se dibuja: las bolas son 2 cuadros de 16×16 que se alternan, y la flecha es un solo dibujo de 36×14 que se gira hacia donde vuela. El `Juego` también mira el tipo para elegir el sonido al llegar. |
 | `Hud` | `Hud.h` / `Hud.cpp` | Lo que se dibuja fijo en la pantalla: el panel de la derecha (nivel, oleada, vida del mago y del códice, maná, habilidades, el botón "Terminar turno" y qué hacer ahora), los números de daño que suben, los números de los ataques anunciados y los carteles (historia, victoria, derrota). También dice qué habilidad o botón hay debajo del mouse (`habilidadEn()`, `estaSobreTerminarTurno()`). |
 | `Muro` | `Juego.h` | `struct` con una casilla del muro de fuego y cuántos turnos le quedan. Mientras dura, esa casilla del mapa es `TipoTerreno::MURO`. |
 | `TipoTerreno` | `Casilla.h` | `enum` con los terrenos posibles: `SUELO`, `SUELO_OCUPADO` (donde está el códice: nadie lo pisa), `COLUMNAROTA` (la *ROCA* del diagrama), `ABISMO` y `MURO` (fuego: solo lo cruza el espectro). |
@@ -242,17 +242,22 @@ Lo único que sigue en el código es la vida, el maná y el movimiento del mago 
 
 **De dónde salen los valores.** Se simularon mil partidas por nivel, en cada dificultad, con tres jugadores
 automáticos: el *experto* (mira dos turnos adelante y no se equivoca), el *medio* (juega bien pero se equivoca
-seguido) y el *novato* (casi al azar). Cuántas veces gana cada uno el piso 1 / el piso 2 (el piso 3 se agregó
-después y no está en la simulación):
+seguido) y el *novato* (casi al azar). Cuántas veces gana cada uno el piso 1 / el piso 2 / el piso 3:
 
 | Dificultad | Novato | Medio | Experto |
 |---|---|---|---|
-| Fácil | **68 % / 60 %** | 98 % / 100 % | 100 % / 100 % |
-| Normal | 44 % / 14 % | **90 % / 86 %** | 100 % / 100 % |
-| Difícil | 10 % / 1 % | 58 % / 29 % | **99 % / 100 %** |
+| Fácil | **68 % / 60 % / 63 %** | 98 % / 100 % / 100 % | 100 % / 100 % / 100 % |
+| Normal | 44 % / 14 % / 16 % | **90 % / 86 % / 93 %** | 100 % / 100 % / 100 % |
+| Difícil | 10 % / 1 % / 1 % | 58 % / 29 % / 39 % | **99 % / 100 % / 100 %** |
 
 En negrita, el jugador para el que está pensada cada dificultad: en Fácil el novato gana la mayoría de las veces,
 en Normal el medio casi siempre, y en Difícil solo se gana siempre jugando sin errores.
+
+**El piso 3** se simuló después de que se agregó. Como estaba al principio era el más fácil de los tres (en Normal el
+medio ganaba 98 %): el golem salía en el medio, pegado al espectro, y como todos suben por el mismo pasillo su
+explosión mataba a sus compañeros. Bajar la vida del códice o subir el daño del arquero casi no cambiaba nada.
+Lo que sí funcionó fue cambiar las oleadas: un espectro más en la primera, y en la segunda el golem y el espectro
+salen de las esquinas. La vida del códice (120) y los valores del arquero quedaron como estaban.
 
 ### Sonidos
 
@@ -262,14 +267,16 @@ carga WAV, OGG y FLAC; **no** carga MP3.
 
 | Archivo | Cuándo suena |
 |---|---|
-| `musica_medieval.wav` | De fondo, en loop, desde que abre el juego (volumen 30). |
+| `musica_medieval.wav` | De fondo, en loop, desde que abre el juego (volumen 7; se cambia con `-` y `=`). |
 | `inicio.ogg` | Al elegir "Nueva partida" o "Continuar". |
 | `bola_energia.ogg` | Al lanzar la bola de energía. |
-| `impacto.ogg` | Cuando llega cualquier proyectil (la bola del mago, la del espectro o la flecha). |
+| `impacto.ogg` | Cuando llega una bola (la del mago o la del espectro). |
 | `ataque_enemigo.wav` | Cuando el caballero ejecuta su ataque cuerpo a cuerpo. |
 | `explosion_golem.wav` | Cuando un golem explota, al llegar o al morir. |
 | `quemadura.wav` | Cuando un enemigo se quema en el muro de fuego. |
 | `ataque_espectro.ogg` | Cuando el espectro lanza su bola de ectoplasma. |
+| `arco_disparo.wav` + `flecha_vuelo.wav` | Cuando el esqueleto arquero dispara. Suenan juntos: el silbido de la flecha arranca suave, cuando el disparo ya se está apagando. |
+| `flecha_impacto.wav` | Cuando llega la flecha. |
 | `victoria.wav` | Al terminar la última oleada del último nivel. |
 | `derrota.ogg` | Cuando muere el mago o destruyen el códice. |
 

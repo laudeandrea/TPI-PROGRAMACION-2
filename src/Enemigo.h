@@ -3,7 +3,7 @@
 #include "Personaje.h"
 #include "Ataque.h"
 
-// Los tipos de enemigo. El numero de cada uno (0, 1, 2) es el que se guarda en los archivos .dat
+// Los tipos de enemigo. El numero de cada uno (0, 1, 2, 3) es el que se guarda en los archivos .dat
 enum class TipoEnemigo {
 	CABALLERO,
 	ESPECTRO,
@@ -12,7 +12,8 @@ enum class TipoEnemigo {
 };
 
 /* Clase base de los enemigos: lo que comparten todos (vida, danio, dibujarse, el ataque anunciado).
-*  Es abstracta (tiene metodos "= 0"): no se puede crear un Enemigo suelto, solo un Caballero, un Espectro o un Golem.
+*  Es abstracta (tiene metodos "= 0"): no se puede crear un Enemigo suelto, solo un Caballero, un Espectro, un Golem
+*  o un EsqueletoArquero.
 *  Como en el diagrama de clases, cada tipo redefine mover() y atacar() (polimorfismo).
 *
 *  ATAQUES ANUNCIADOS: el enemigo no pega en el momento. Al final de su turno marca a que casillas va a
@@ -24,7 +25,8 @@ class Enemigo : public Personaje {
 		bool tieneAnuncio;      // si ya marco a donde va a pegar
 		Ataque ataqueAnunciado; // las casillas marcadas (solo vale si tieneAnuncio)
 
-		bool puedeIrA(const Mapa& mapa, int fila, int columna) const;
+		// Si puede pararse en esa casilla: que exista y que pueda pisar su terreno (no mira si hay alguien).
+		bool puedeIrA(const Mapa& mapa, int _fila, int _columna) const;
 		// Devuelve el ataque que habia anunciado y lo borra (ya se esta ejecutando).
 		Ataque tomarAtaqueAnunciado();
 		// El primer paso del camino mas corto hasta una casilla desde la que le llegue el ataque al objetivo.
@@ -47,7 +49,7 @@ class Enemigo : public Personaje {
 		virtual bool mover(const Mapa& mapa, const std::vector<std::vector<bool>>& ocupadas,
 			int filaObjetivo, int columnaObjetivo) = 0;
 		// Ejecuta el ataque que habia anunciado: devuelve a que casillas le pega y cuanto, y borra el anuncio.
-		// Cada tipo lo redefine (el caballero golpea, el espectro tira una bola, el golem explota).
+		// Cada tipo lo redefine (el caballero golpea, el espectro tira una bola, el arquero una flecha, el golem explota).
 		virtual Ataque atacar() = 0;
 
 		// Casilla a la que quiere moverse para acercarse al objetivo en linea recta, como (x = columna, y = fila).
@@ -61,7 +63,7 @@ class Enemigo : public Personaje {
 		virtual Ataque planearAtaque(int filaObjetivo, int columnaObjetivo) const;
 		// El ataque que hace al morir. Por defecto ninguno (el golem explota).
 		virtual Ataque ataqueAlMorir() const;
-		// Si ataca de lejos: el danio llega con una bola que vuela (el Juego la crea), no en el momento.
+		// Si ataca de lejos: el danio llega con un proyectil que vuela (el Juego lo crea), no en el momento.
 		virtual bool atacaADistancia() const;
 
 		// --- Ataque anunciado ---

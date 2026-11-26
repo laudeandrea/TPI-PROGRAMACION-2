@@ -1,49 +1,41 @@
 #include "Personaje.h"
 
-Personaje::Personaje(int _fila, int _columna, int _vida){
-	fila = _fila;
-	columna = _columna;
-	vida = _vida;
-	vidaMaxima = _vida;
-};
+Personaje::Personaje(int _fila, int _columna, int _vida)
+	: fila(_fila), columna(_columna), vida(_vida), vidaMaxima(_vida) {
+}
 
-void Personaje::mostrar(sf::RenderWindow& ventana, const Mapa& mapa) const{
-
+void Personaje::mostrar(sf::RenderWindow& ventana, const Mapa& mapa) const {
 	sf::Sprite sprite;
 	sprite.setTexture(textura);
 
-	//en los pies del mago: la base de la imagen se apoya en el centro de la casilla.
-	sf::FloatRect bordes = sprite.getLocalBounds(); 
-    sprite.setOrigin(bordes.width / 2, bordes.height);
+	// Origen en los pies: la base de la imagen (abajo al centro) se apoya en el centro de la casilla
+	sf::FloatRect bordes = sprite.getLocalBounds();
+	sprite.setOrigin(bordes.width / 2, bordes.height);
+	sprite.setPosition(mapa.casillaAmundo(fila, columna));
 
-	// Ubicar: Columna = X, Fila = Y
-	sf::Vector2f posicion = mapa.casillaAmundo(fila, columna);
-	sprite.setPosition(posicion);
-
-	// Dibujar en la ventana
 	ventana.draw(sprite);
-};
+}
 
-void Personaje::mover (int _fila, int _columna){
+void Personaje::mover (int _fila, int _columna) {
 	fila = _fila;
 	columna = _columna;
-};
+}
 
 int Personaje::getFila() const {
 	return fila;
-};
+}
 
 int Personaje::getColumna() const {
 	return columna;
-};
+}
 
 int Personaje::getVida() const {
 	return vida;
-};
+}
 
 int Personaje::getVidaMaxima() const {
 	return vidaMaxima;
-};
+}
 
 void Personaje::mostrarBarraVida(sf::RenderWindow& ventana, const Mapa& mapa) const {
 	const float ANCHO = 32.f, ALTO = 4.f;
@@ -66,30 +58,30 @@ void Personaje::mostrarBarraVida(sf::RenderWindow& ventana, const Mapa& mapa) co
 	relleno.setPosition(x, y);
 	relleno.setFillColor(sf::Color(176, 74, 74));     // Peligro
 	ventana.draw(relleno);
-};
+}
 
 bool Personaje::estaVivo() const {
 	return vida > 0;
-};
+}
 
 bool Personaje::estaEn(int _fila, int _columna) const {
 	return fila == _fila && columna == _columna;
-};
+}
 
 bool Personaje::puedePisar(TipoTerreno terreno) const {
 	// Por defecto, lo que es transitable (el suelo). Las hijas lo pueden redefinir (el espectro vuela)
 	return Casilla(terreno).esTransitable();
-};
+}
 
 void Personaje::setVida(int _vida) {
 	vida = _vida;
 	if (vida < 0) vida = 0;
 	if (vida > vidaMaxima) vida = vidaMaxima;
-};
+}
 
-void Personaje::recibirDanio(int cantidad){
+void Personaje::recibirDanio(int cantidad) {
 	vida -= cantidad;
 	if (vida < 0) {
 		vida = 0;
 	}
-};
+}
