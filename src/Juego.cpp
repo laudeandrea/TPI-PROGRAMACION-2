@@ -104,7 +104,7 @@ void Juego::procesarEventos() {
 				continuarPartida();
 				sonidos.reproducirInicio();
 			}
-			if (opcion == 1) {              // Nueva partida: primero se elige la dificultad (arranca marcada la Normal)
+			if (opcion == 1) {              // Jugar (partida nueva): primero se elige la dificultad (arranca marcada la Normal)
 				menuDificultad.setSeleccionada(Catalogo::DIFICULTAD_NORMAL);
 				estado = EstadoJuego::ELEGIR_DIFICULTAD;
 			}
@@ -112,8 +112,18 @@ void Juego::procesarEventos() {
 				ayuda.reiniciar();
 				estado = EstadoJuego::COMO_JUGAR;
 			}
-			if (opcion == 3) {              // Salir
+			if (opcion == 3) {              // Creditos
+				estado = EstadoJuego::CREDITOS;
+			}
+			if (opcion == 4) {              // Salir
 				window.close();
+			}
+		}
+		else if (estado == EstadoJuego::CREDITOS) {
+			// Enter, Escape o un click vuelven al menu
+			bool click = event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left;
+			if (enter || escape || click) {
+				estado = EstadoJuego::MENU;
 			}
 		}
 		else if (estado == EstadoJuego::ELEGIR_DIFICULTAD) {
@@ -271,6 +281,20 @@ void Juego::dibujar() {
 	}
 	else if (estado == EstadoJuego::COMO_JUGAR) {
 		ayuda.dibujar(window);
+	}
+	else if (estado == EstadoJuego::CREDITOS) {
+		// El fondo del menu atras y, encima, el mismo cartel que la historia de cada piso (sin tildes, como todo el juego).
+		// El detalle de cada imagen y sonido esta en Imagenes/CREDITOS.txt y Sonidos/CREDITOS.txt
+		menu.dibujar(window);
+		hud.dibujarHistoria(window, "CREDITOS", "El Codice del Mago", {
+			"Programacion: Franco Agustin Coronel,",
+			"Diego Lautaro De Andrea y Santiago Gomez Roda",
+			"Imagenes: hechas para el juego",
+			"Musica: RandomMind (CC0)",
+			"Sonidos: Sparklin Labs y Kenney (CC0)",
+			"Fuente: Pixelify Sans (SIL OFL 1.1)",
+			"UTN FRGP - Programacion II - 2026"
+		}, "Enter, Esc o click para volver");
 	}
 	else {
 		dibujarTablero();

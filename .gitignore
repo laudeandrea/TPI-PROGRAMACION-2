@@ -20,6 +20,8 @@ Enemigos.dat
 
 # Se quedan solo en esta PC
 /docs/
+# Resumen para estudiar la defensa (.md y .pdf), aunque se mueva de carpeta
+Resumen_TPI_*
 /_plantilla_cmake/
 /.vscode
 /salida_arte/

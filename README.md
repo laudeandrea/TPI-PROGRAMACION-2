@@ -46,7 +46,7 @@ Hay que defender el **códice** (el libro sobre el atril) en los **3 pisos** de 
 Se pierde si el mago se queda sin vida o si destruyen el códice; se gana al terminar con la última oleada del piso 3.
 El códice tiene 80 de vida en el piso 1, 100 en el piso 2 y 120 en el piso 3 (en Normal).
 
-**Dificultad.** Al elegir "Nueva partida" se elige **Fácil**, **Normal** o **Difícil** ([vista previa](Imagenes/vista_previa_dificultad.png)).
+**Dificultad.** Al elegir "Jugar" se elige **Fácil**, **Normal** o **Difícil** ([vista previa](Imagenes/vista_previa_dificultad.png)).
 Queda guardada con la partida y se ve abajo a la derecha del panel. Cada una cambia estos valores (están en
 `Datos/Dificultades.dat`):
 
@@ -77,8 +77,10 @@ Al ganar un nivel aparece el cartel "Nivel superado", con la historia del piso s
 hay una. El nivel siguiente ya queda guardado: **Enter** sigue jugando y **Escape** vuelve al menú. El mago
 empieza cada nivel con la vida y el maná llenos.
 
-El menú principal tiene **Continuar**, **Nueva partida**, **Como jugar** y **Salir**. "Continuar" retoma la
-partida guardada (si quedó por la mitad, tal como estaba); "Nueva partida" arranca de cero y borra el guardado.
+El menú principal tiene **Continuar**, **Jugar**, **Como jugar**, **Creditos** y **Salir**. "Continuar" retoma la
+partida guardada (si quedó por la mitad, tal como estaba); "Jugar" arranca una partida nueva y borra el guardado.
+"Creditos" muestra quiénes hicieron el juego y de dónde salen la música, los sonidos y la fuente (Enter, Escape o
+un click vuelven al menú).
 Mientras no haya ninguna partida guardada, "Continuar" se ve en gris y no se puede elegir. "Como jugar" explica
 las reglas en 6 páginas (el objetivo, el turno, los ataques anunciados, las habilidades, el muro de fuego y los
 enemigos) que se pasan con las flechas ← →; Escape vuelve al menú ([vista previa](Imagenes/vista_previa_ayuda.png)).
@@ -168,7 +170,7 @@ build/                 Generado al compilar (ignorado por git)
 | `TipoEnemigo` | `Enemigo.h` | `enum` con los tipos de enemigo: `CABALLERO` (0), `ESPECTRO` (1), `GOLEM` (2) y `ESQUELETO` (3, el arquero). El número es el que se guarda en los `.dat`. |
 | `HabilidadSeleccionada` | `Habilidad.h` | `enum` con la habilidad que tiene preparada el jugador: `NINGUNA`, `BOLA_DE_ENERGIA` (= 1), `EMPUJE` (= 2) y `MURO` (= 3). El número coincide con la tecla, y siempre es el `TipoHabilidad` + 1. |
 | `TipoHabilidad` | `Habilidad.h` | `enum` con lo que hace cada habilidad: `BOLADEENERGIA` (0), `EMPUJE` (1) y `MURO` (2). |
-| `EstadoJuego` | `Juego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `ELEGIR_DIFICULTAD`, `COMO_JUGAR`, `HISTORIA`, `JUGANDO`, `NIVEL_SUPERADO`, `GANASTE`, `PERDISTE`. |
+| `EstadoJuego` | `Juego.h` | `enum` con la pantalla en la que está el juego: `MENU`, `ELEGIR_DIFICULTAD`, `COMO_JUGAR`, `CREDITOS`, `HISTORIA`, `JUGANDO`, `NIVEL_SUPERADO`, `GANASTE`, `PERDISTE`. |
 | `FaseTurno` | `Juego.h` | `enum` con de quién es el turno: `JUGADOR`, `DISPARANDO` (la bola del mago está volando), `ENEMIGOS_ATACAN` (ejecutan lo que anunciaron) y `ENEMIGOS_ESPERAN` (vuelan sus bolas y flechas; después caminan y anuncian). |
 
 `main.cpp` solo crea un `Juego` y llama a `iniciar()`.
@@ -201,7 +203,7 @@ maqueta. Dónde está cada cosa:
 La partida se guarda **sola**: al empezar cada turno del jugador, al salir con Escape y al cerrar la ventana
 (si es el turno del jugador). Así "Continuar" sigue exactamente desde donde quedó. También se guarda al ganar un
 nivel (el que sigue, sin empezar) y al perder (el mismo nivel, sin empezar: "Continuar" lo vuelve a intentar).
-Al ganar el último nivel o al elegir "Nueva partida", se borra.
+Al ganar el último nivel o al elegir "Jugar", se borra.
 
 Son tres archivos, porque cada uno tiene registros de un tipo distinto:
 
@@ -268,7 +270,7 @@ carga WAV, OGG y FLAC; **no** carga MP3.
 | Archivo | Cuándo suena |
 |---|---|
 | `musica_medieval.wav` | De fondo, en loop, desde que abre el juego (volumen 7; se cambia con `-` y `=`). |
-| `inicio.ogg` | Al elegir "Nueva partida" o "Continuar". |
+| `inicio.ogg` | Al elegir "Jugar" (después de la dificultad) o "Continuar". |
 | `bola_energia.ogg` | Al lanzar la bola de energía. |
 | `impacto.ogg` | Cuando llega una bola (la del mago o la del espectro). |
 | `ataque_enemigo.wav` | Cuando el caballero ejecuta su ataque cuerpo a cuerpo. |
@@ -305,8 +307,10 @@ Los tres sonidos del arquero (`arco_disparo.wav`, `flecha_vuelo.wav` y `flecha_i
        (o `-1`). Antes, `menu.setHayPartida(partidaArchivo.existe())` habilita o deshabilita "Continuar".
        "Continuar" llama a `continuarPartida()`, que toma la dificultad guardada: si el nivel no había empezado,
        lo arma y muestra su historia; si quedó por la mitad, lo arma y le pisa encima lo guardado (oleada, códice, muros, mago y
-       enemigos con sus ataques anunciados). "Nueva partida" pasa a `ELEGIR_DIFICULTAD`, con la Normal marcada. "Como jugar" llama a `ayuda.reiniciar()` y pasa a
-       `COMO_JUGAR`; "Salir" cierra la ventana.
+       enemigos con sus ataques anunciados). "Jugar" pasa a `ELEGIR_DIFICULTAD`, con la Normal marcada. "Como jugar" llama a `ayuda.reiniciar()` y pasa a
+       `COMO_JUGAR`; "Creditos" pasa a `CREDITOS`; "Salir" cierra la ventana.
+     - **En los créditos** (`CREDITOS`): Enter, Escape o un click vuelven a `MENU`. Se dibuja el fondo del menú y
+       encima el cartel de `hud.dibujarHistoria()` con los nombres del grupo y los recursos usados.
      - **En "Como jugar"**: le pasa cada evento a `ayuda.procesarEvento()`. Si devuelve `true` (Escape,
        click en "[Esc] Volver" o Enter en la última página), vuelve a `MENU`.
      - **Elegir la dificultad** (`ELEGIR_DIFICULTAD`): le pasa cada evento a `menuDificultad.procesarEvento()`.

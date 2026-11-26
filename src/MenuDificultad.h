@@ -4,7 +4,7 @@
 #include <vector>
 #include "Catalogo.h"
 
-/* La pantalla que aparece al elegir "Nueva partida": Facil, Normal o Dificil.
+/* La pantalla que aparece al elegir "Jugar": Facil, Normal o Dificil.
 *  Funciona igual que el Menu (flechas o mouse para marcar, Enter o click para elegir) y usa su mismo arte.
 *  Abajo de las opciones explica la dificultad marcada: que es y que cambia (sale de Dificultades.dat). */
 class MenuDificultad {

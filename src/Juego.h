@@ -19,8 +19,9 @@
 // En que pantalla esta el juego. Cada una lee las teclas y dibuja distinto (ver procesarEventos y dibujar)
 enum class EstadoJuego {
 	MENU,
-	ELEGIR_DIFICULTAD, // la pantalla de Facil / Normal / Dificil, al elegir "Nueva partida"
+	ELEGIR_DIFICULTAD, // la pantalla de Facil / Normal / Dificil, al elegir "Jugar"
 	COMO_JUGAR,        // la pantalla de ayuda que se abre desde el menu
+	CREDITOS,          // quienes hicieron el juego (se abre desde el menu)
 	HISTORIA,          // el cartel con la historia del piso, antes de empezar a jugarlo
 	JUGANDO,
 	NIVEL_SUPERADO,    // se gano un nivel y hay otro: cartel con la historia del proximo y "Enter para seguir"

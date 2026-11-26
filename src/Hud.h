@@ -93,7 +93,7 @@ class Hud {
 		// Cartel de victoria o derrota. Se llama despues de dibujar().
 		void dibujarFinDePartida(sf::RenderWindow& ventana, bool gano, const std::string& motivo) const;
 		// Cartel grande con la historia del piso: titulo, un aviso (en Gema, puede ir vacio), las lineas de la
-		// historia y que tecla apretar. Se usa antes de cada piso y entre un nivel y el siguiente.
+		// historia y que tecla apretar. Se usa antes de cada piso, entre un nivel y el siguiente y en los creditos.
 		void dibujarHistoria(sf::RenderWindow& ventana, const std::string& titulo, const std::string& aviso,
 			const std::vector<std::string>& lineas, const std::string& instruccion) const;
 };

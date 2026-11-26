@@ -25,10 +25,10 @@ Menu::Menu() {
 
 	// Textos de las opciones (sin tildes, asi SFML los muestra bien sin convertirlos).
 	// OJO: el orden tiene que coincidir con los indices que usa Juego:
-	// 0 = Continuar, 1 = Nueva partida, 2 = Como jugar, 3 = Salir.
-	std::string nombres[4] = { "Continuar", "Nueva partida", "Como jugar", "Salir" };
+	// 0 = Continuar, 1 = Jugar, 2 = Como jugar, 3 = Creditos, 4 = Salir.
+	std::string nombres[CANT_OPCIONES] = { "Continuar", "Jugar", "Como jugar", "Creditos", "Salir" };
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < CANT_OPCIONES; i++) {
 		opciones[i].setFont(fuente);
 		opciones[i].setString(nombres[i]);
 		opciones[i].setCharacterSize(22);
@@ -47,12 +47,12 @@ int Menu::procesarEvento(const sf::Event& evento, const sf::RenderWindow& ventan
 	if (evento.type == sf::Event::KeyPressed) {
 		if (evento.key.code == sf::Keyboard::Down) {
 			do {
-				seleccionada = (seleccionada + 1) % 4;
+				seleccionada = (seleccionada + 1) % CANT_OPCIONES;
 			} while (!hayPartida && seleccionada == 0);  // no se puede elegir "Continuar"
 		}
 		if (evento.key.code == sf::Keyboard::Up) {
 			do {
-				seleccionada = (seleccionada + 3) % 4;
+				seleccionada = (seleccionada + CANT_OPCIONES - 1) % CANT_OPCIONES; // una menos, dando la vuelta
 			} while (!hayPartida && seleccionada == 0);
 		}
 		if (evento.key.code == sf::Keyboard::Enter) {
@@ -69,7 +69,7 @@ int Menu::procesarEvento(const sf::Event& evento, const sf::RenderWindow& ventan
 		sf::Vector2i pixel(evento.mouseMove.x, evento.mouseMove.y);
 		sf::Vector2f punto = ventana.mapPixelToCoords(pixel, vista);
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < CANT_OPCIONES; i++) {
 			if (i == 0 && !hayPartida) continue;   // "Continuar" no reacciona
 			if (opciones[i].getGlobalBounds().contains(punto)) {
 				seleccionada = i;
@@ -82,7 +82,7 @@ int Menu::procesarEvento(const sf::Event& evento, const sf::RenderWindow& ventan
 		sf::Vector2i pixel(evento.mouseButton.x, evento.mouseButton.y);
 		sf::Vector2f punto = ventana.mapPixelToCoords(pixel, vista);
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < CANT_OPCIONES; i++) {
 			if (i == 0 && !hayPartida) continue;   // "Continuar" deshabilitada
 			if (opciones[i].getGlobalBounds().contains(punto)) {
 				return i;
@@ -99,7 +99,7 @@ void Menu::dibujar(sf::RenderWindow& ventana) {
 	ventana.draw(titulo);
 
 	// Dibuja las opciones: la elegida en Gema, las demas en Piedra
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < CANT_OPCIONES; i++) {
 		if (i == 0 && !hayPartida) {
 			opciones[i].setFillColor(sf::Color(90, 86, 80));     // Gris apagado: deshabilitada
 		}
@@ -123,7 +123,7 @@ void Menu::setHayPartida(bool hay) {
 	if (hay && !hayPartida) {
 		seleccionada = 0;
 	}
-	// Si ya no hay partida y el selector estaba en "Continuar", lo manda a "Nueva partida"
+	// Si ya no hay partida y el selector estaba en "Continuar", lo manda a "Jugar"
 	if (!hay && seleccionada == 0) {
 		seleccionada = 1;
 	}

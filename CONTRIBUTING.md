@@ -157,7 +157,7 @@ tiene que quedar.
 |---|---|---|
 | Fondo | `menu_fondo.png` (1280×720) | En (0, 0). Escena general: la torre de noche, el mago a la izquierda y los tres enemigos a la derecha. Deja libres el lugar del título y el de las opciones. |
 | Título | `menu_titulo.png` (524×84) | Centrado en x, arriba en **y = 168** → posición (378, 168). |
-| Opciones | texto, fuente 22 | Centradas en x (**x = 640**). La primera con su centro en **y = 520**, las demás cada **40 px**. |
+| Opciones | texto, fuente 22 | Centradas en x (**x = 640**). Son 5 (Continuar, Jugar, Como jugar, Creditos y Salir): la primera con su centro en **y = 500**, las demás cada **40 px** (la última queda en 660). |
 | Selector | `menu_selector.png` (18×18) | A la izquierda de la opción elegida, **14 px** antes del texto, centrado en su altura. |
 | Pie | texto, fuente 11, color Tenue | Abajo a la derecha, a 16 px de cada borde. |
 
@@ -168,7 +168,7 @@ tiene que quedar.
 
 ### Pantalla de dificultad
 
-Aparece al elegir "Nueva partida" (clase `MenuDificultad`). Es el menú principal con otras opciones: mismo fondo,
+Aparece al elegir "Jugar" (clase `MenuDificultad`). Es el menú principal con otras opciones: mismo fondo,
 mismo título y mismo selector. `Imagenes/vista_previa_dificultad.png` muestra cómo tiene que quedar.
 
 | Qué | Forma | Dónde |
